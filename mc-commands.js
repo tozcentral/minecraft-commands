@@ -1,17 +1,9 @@
-/**
-	Process:
+(function ( document, window, undefined ) {
 
-	Create param: Same with player selector
-		new CommandSelector ( )
-		CommandSelector.toHTML ( container )
-			addEvent ( onchange, selector.onChange )
-			new Command ( name )
-			Command.toHTML ( container )
-				addEvent ( onchange, command.onChange )
-			Command.toString
-		Command.toString
-
-**/
+var commands = {};
+var params = {};
+var tags = {};
+var selectors = [];
 
 function onRemoveClick ( e, parent )
 {
@@ -76,43 +68,11 @@ function onRemoveClick ( e, parent )
 	return false;
 }
 
-
-var commands = {
-	'achievement': CommandAchievement,
-	'clear': CommandClear,
-	'debug': CommandDebug,
-	'defaultgamemode': CommandDefaultGamemode,
-	'difficulty': CommandDifficulty,
-	'effect': CommandEffect,
-	'enchant': CommandEnchant,
-	'gamemode': CommandGamemode,
-	'gamerule': CommandGameRule,
-	'give': CommandGive,
-	'me': CommandMe,
-	//'kill': CommandKill,
-	//'publish': CommandPublish,
-	'playsound': CommandPlaySound,
-	'say': CommandSay,
-	'scoreboard': CommandScoreBoard,
-	//'seed': CommandSeed,
-	'setblock': CommandSetBlock,
-	'spawnpoint': CommandSpawnPoint,
-	'spreadplayers': CommandSpreadPlayers,
-	'summon': CommandSummon,
-	'tell': CommandTell,
-	'tellraw': CommandTellRaw,
-	'testfor': CommandTestFor,
-	'testforblock': CommandTestForBlock,
-	'time': CommandTime,
-	'toggledownfall': CommandToggleDownFall,
-	'tp': CommandTP,
-	'weather': CommandWeather,
-	'xp': CommandXP
-};
-
-function CommandSelector ( container, from )
+function CommandSelector ( container, text, from )
 {
 	this.command = null;
+	this.reader = container;
+	this.text = text;
 
 	this.createHTML ( container );
 
@@ -160,7 +120,7 @@ CommandSelector.prototype.updateCommand = function ( command )
 
 CommandSelector.prototype.createHTML = function ( container )
 {
-	container.className = 'mc-command';
+	container.className += ' mc-command';
 
 	var selector = document.createElement ( 'select' );
 	selector.className = 'mc-command-selector';
@@ -295,7 +255,7 @@ function GenericCommand ( container, name, from )
 	{
 		var param = params[i];
 
-		this.createParam ( container, param.name, param.type || TextParam, from, {defaultValue: param.defaultValue || '', ignoreIfHidden: param.ignoreIfHidden || true, optinal: param.optinal || false} );
+		this.createParam ( container, param.name, param.type || ParamText, from, {defaultValue: param.defaultValue || '', ignoreIfHidden: param.ignoreIfHidden || true, optinal: param.optinal || false} );
 	}
 }
 
@@ -310,9 +270,9 @@ function CommandAchievement ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'give', StaticParam, from, { defaultValue: 'give' }  );
-	this.createParam ( container, 'achievement or statistic', AchievementParam, from );
-	this.createParam ( container, 'player', PlayerSelectorParam, from, { optional: true } );
+	this.createParam ( container, 'give', ParamStatic, from, { defaultValue: 'give' }  );
+	this.createParam ( container, 'achievement or statistic', ParamAchievement, from );
+	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
 }
 
 CommandAchievement.prototype = new Command ( );
@@ -326,10 +286,10 @@ function CommandClear ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', PlayerSelectorParam, from, { optional: true } );
-	this.createParam ( container, 'item metadata', ItemParam, from, { optional: true, ignoreValue: true } ); // New ItemParam, list of all items + custom
-	this.createParam ( container, 'item', NumberParam, from, { optional: true, ignoreIfHidden: false, min: 1 } );
-	this.createParam ( container, 'metadata', NumberParam, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0 } );
+	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
+	this.createParam ( container, 'item metadata', ParamItem, from, { optional: true, ignoreValue: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item', ParamNumber, from, { optional: true, ignoreIfHidden: false, min: 1 } );
+	this.createParam ( container, 'metadata', ParamNumber, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0 } );
 }
 
 CommandClear.prototype = new Command ( );
@@ -395,7 +355,7 @@ function CommandDebug ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'start | stop', ListParam, from, { items: ['start', 'stop'] } );
+	this.createParam ( container, 'start | stop', ParamList, from, { items: ['start', 'stop'] } );
 }
 
 CommandDebug.prototype = new Command ( );
@@ -409,7 +369,7 @@ function CommandDefaultGamemode ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'survival | creative | adventure', ListParam, from, { items: ['survival', 'creative', 'adventure'] } );
+	this.createParam ( container, 'survival | creative | adventure', ParamList, from, { items: ['survival', 'creative', 'adventure'] } );
 }
 
 CommandDefaultGamemode.prototype = new Command ( );
@@ -423,7 +383,7 @@ function CommandDifficulty ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'peaceful | easy | normal | hard', ListParam, from, { items: ['peaceful', 'easy', 'normal', 'hard'] } );
+	this.createParam ( container, 'peaceful | easy | normal | hard', ParamList, from, { items: ['peaceful', 'easy', 'normal', 'hard'] } );
 }
 
 CommandDifficulty.prototype = new Command ( );
@@ -437,10 +397,10 @@ function CommandEffect ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', PlayerSelectorParam, from );
-	this.createParam ( container, 'effect', PotionParam, from );
-	this.createParam ( container, 'seconds', NumberParam, from, { optional: true, ignoreIfHidden: true, min:0, max:1000000 } );
-	this.createParam ( container, 'amplifier', NumberParam, from, { optional: true, ignoreIfHidden: true, min:0, max:255 } );
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'effect', ParamPotion, from );
+	this.createParam ( container, 'seconds', ParamNumber, from, { optional: true, ignoreIfHidden: true, min:0, max:1000000 } );
+	this.createParam ( container, 'amplifier', ParamNumber, from, { optional: true, ignoreIfHidden: true, min:0, max:255 } );
 }
 
 CommandEffect.prototype = new Command ( );
@@ -496,9 +456,9 @@ function CommandEnchant ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', PlayerSelectorParam, from );
-	this.createParam ( container, 'enchantment', EnchantmentParam, from );
-	this.createParam ( container, 'level', NumberParam, from, { optional: true, min:1, max:5 } );
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'enchantment', ParamEnchantment, from );
+	this.createParam ( container, 'level', ParamNumber, from, { optional: true, min:1, max:5 } );
 }
 
 CommandEnchant.prototype = new Command ( );
@@ -560,8 +520,8 @@ function CommandGamemode ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'survival | creative | adventure', ListParam, from, { items: ['survival', 'creative', 'adventure'] } );
-	this.createParam ( container, 'player', PlayerSelectorParam, from, { optional: true } );
+	this.createParam ( container, 'survival | creative | adventure', ParamList, from, { items: ['survival', 'creative', 'adventure'] } );
+	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
 }
 
 CommandGamemode.prototype = new Command ( );
@@ -575,8 +535,8 @@ function CommandGameRule ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'rulename', ListParam, from, { items: ['commandBlockOutput', 'doFireTick', 'doMobLoot', 'doMobSpawning', 'doTileDrops', 'keepInventory', 'mobGriefing', 'naturalRegeneration', 'doDaylightCycle'] } );
-	this.createParam ( container, 'true | false', ListParam, from, { items: ['true', 'false'] } );
+	this.createParam ( container, 'rulename', ParamList, from, { items: ['commandBlockOutput', 'doFireTick', 'doMobLoot', 'doMobSpawning', 'doTileDrops', 'keepInventory', 'mobGriefing', 'naturalRegeneration', 'doDaylightCycle'] } );
+	this.createParam ( container, 'true | false', ParamList, from, { items: ['true', 'false'] } );
 }
 
 CommandGameRule.prototype = new Command ( );
@@ -590,12 +550,12 @@ function CommandGive ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', PlayerSelectorParam, from );
-	this.createParam ( container, 'item metadata', ItemParam, from, { ignoreValue: true } ); // New ItemParam, list of all items + custom
-	this.createParam ( container, 'item', NumberParam, from, { ignoreIfHidden: false, min:1 } );
-	this.createParam ( container, 'amount', NumberParam, from, { optional: true, min: 0, max: 64 } );
-	this.createParam ( container, 'metadata', NumberParam, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
-	this.createParam ( container, 'dataTag', DataTagParam, from, { optional: true, type: 'ItemGeneric' } );
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'item metadata', ParamItem, from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item', ParamNumber, from, { ignoreIfHidden: false, min:1 } );
+	this.createParam ( container, 'amount', ParamNumber, from, { optional: true, min: 0, max: 64 } );
+	this.createParam ( container, 'metadata', ParamNumber, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
+	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true, type: 'ItemGeneric' } );
 }
 
 CommandGive.prototype = new Command ( );
@@ -684,7 +644,7 @@ function CommandMe ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'actiontext', TextParam, '', true, false, from );
+	this.createParam ( container, 'actiontext', ParamText, '', true, false, from );
 }
 
 CommandMe.prototype = new Command ( );
@@ -698,14 +658,14 @@ function CommandPlaySound ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'sound', SoundParam, from );
-	this.createParam ( container, 'player', PlayerSelectorParam, from );
-	this.createParam ( container, 'x', PosParam, from, { optional: true } );
-	this.createParam ( container, 'y', PosParam, from, { optional: true, height: true } );
-	this.createParam ( container, 'z', PosParam, from, { optional: true } );
-	this.createParam ( container, 'volume', NumberParam, from, { optional: true, min:0.0, isFloat:true } );
-	this.createParam ( container, 'pitch', NumberParam, from, { optional: true, min:0.0, max:2.0, isFloat:true } );
-	this.createParam ( container, 'minimumVolume', NumberParam, from, { optional: true, min:0.0, max:1.0, isFloat:true } );
+	this.createParam ( container, 'sound', ParamSound, from );
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'x', ParamPos, from, { optional: true } );
+	this.createParam ( container, 'y', ParamPos, from, { optional: true, height: true } );
+	this.createParam ( container, 'z', ParamPos, from, { optional: true } );
+	this.createParam ( container, 'volume', ParamNumber, from, { optional: true, min:0.0, isFloat:true } );
+	this.createParam ( container, 'pitch', ParamNumber, from, { optional: true, min:0.0, max:2.0, isFloat:true } );
+	this.createParam ( container, 'minimumVolume', ParamNumber, from, { optional: true, min:0.0, max:1.0, isFloat:true } );
 }
 
 CommandPlaySound.prototype = new Command ( );
@@ -719,7 +679,7 @@ function CommandSay ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'message', TextParam, '', true, false, from );
+	this.createParam ( container, 'message', ParamText, '', true, false, from );
 }
 
 CommandSay.prototype = new Command ( );
@@ -733,13 +693,13 @@ function CommandScoreBoard ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'objectives | players | teams', ListParam, from, { items: ['objectives','players','teams'] } );
-	this.createParam ( container, 'objectives', ScoreboardObjectivesParam, from );
-	this.createParam ( container, 'players', ScoreboardPlayersParam, from );
-	this.createParam ( container, 'teams', ScoreboardTeamsParam, from );
-	/*this.createParam ( container, 'list | add | remove | setdisplay', ListParam, from, { items: ['list','add','remove','setdisplay'] } );
-	this.createParam ( container, 'set | add | remove | reset | list', ListParam, from, { items: ['set','add','remove','reset','list'] } );
-	this.createParam ( container, 'list | add | remove | empty | join | leave | option', ListParam, from, { items: ['list','add','remove','empty','join','leave','option'] } );*/
+	this.createParam ( container, 'objectives | players | teams', ParamList, from, { items: ['objectives','players','teams'] } );
+	this.createParam ( container, 'objectives', ParamScoreboardObjectives, from );
+	this.createParam ( container, 'players', ParamScoreboardPlayers, from );
+	this.createParam ( container, 'teams', ParamScoreboardTeams, from );
+	/*this.createParam ( container, 'list | add | remove | setdisplay', ParamList, from, { items: ['list','add','remove','setdisplay'] } );
+	this.createParam ( container, 'set | add | remove | reset | list', ParamList, from, { items: ['set','add','remove','reset','list'] } );
+	this.createParam ( container, 'list | add | remove | empty | join | leave | option', ParamList, from, { items: ['list','add','remove','empty','join','leave','option'] } );*/
 }
 
 CommandScoreBoard.prototype = new Command ( );
@@ -753,14 +713,14 @@ function CommandSetBlock ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'x', PosParam, from );
-	this.createParam ( container, 'y', PosParam, from, { height: true } );
-	this.createParam ( container, 'z', PosParam, from );
-	this.createParam ( container, 'tilename datavalue', BlockParam, from, { ignoreValue: true } );
-	this.createParam ( container, 'tilename', TextParam, from, { ignoreIfHidden: false } );
-	this.createParam ( container, 'datavalue', NumberParam, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
-	this.createParam ( container, 'oldblockHandling', ListParam, from, { optional: true, items: ['', 'replace','keep','destory'] } );
-	this.createParam ( container, 'dataTag', DataTagParam, from, { optional: true, type: 'BlockGeneric' } );
+	this.createParam ( container, 'x', ParamPos, from );
+	this.createParam ( container, 'y', ParamPos, from, { height: true } );
+	this.createParam ( container, 'z', ParamPos, from );
+	this.createParam ( container, 'tilename datavalue', ParamBlock, from, { ignoreValue: true } );
+	this.createParam ( container, 'tilename', ParamText, from, { ignoreIfHidden: false } );
+	this.createParam ( container, 'datavalue', ParamNumber, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
+	this.createParam ( container, 'oldblockHandling', ParamList, from, { optional: true, items: ['', 'replace','keep','destory'] } );
+	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true, type: 'BlockGeneric' } );
 }
 
 CommandSetBlock.prototype = new Command ( );
@@ -798,10 +758,10 @@ function CommandSpawnPoint ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', PlayerSelectorParam, from, { optional: true } );
-	this.createParam ( container, 'x', PosParam, from, { optional: true } );
-	this.createParam ( container, 'y', PosParam, from, { optional: true, height: true } );
-	this.createParam ( container, 'z', PosParam, from, { optional: true } );
+	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
+	this.createParam ( container, 'x', ParamPos, from, { optional: true } );
+	this.createParam ( container, 'y', ParamPos, from, { optional: true, height: true } );
+	this.createParam ( container, 'z', ParamPos, from, { optional: true } );
 }
 
 CommandSpawnPoint.prototype = new Command ( );
@@ -815,12 +775,12 @@ function CommandSpreadPlayers ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'x', PosParam, from );
-	this.createParam ( container, 'z', PosParam, from );
-	this.createParam ( container, 'spreadDistance', NumberParam, from, {isFloat:true} );
-	this.createParam ( container, 'maxRange', NumberParam, from );
-	this.createParam ( container, 'respectTeams', ListParam, from, { items: ['true','false'] } );
-	//this.createParam ( container, 'player', PlayerListParam, from );
+	this.createParam ( container, 'x', ParamPos, from );
+	this.createParam ( container, 'z', ParamPos, from );
+	this.createParam ( container, 'spreadDistance', ParamNumber, from, {isFloat:true} );
+	this.createParam ( container, 'maxRange', ParamNumber, from );
+	this.createParam ( container, 'respectTeams', ParamList, from, { items: ['true','false'] } );
+	//this.createParam ( container, 'player', PlayerParamList, from );
 }
 
 CommandSpreadPlayers.prototype = new Command ( );
@@ -834,11 +794,11 @@ function CommandSummon ( container, from )
 
 	from = from && from.params;
 
-	/*this.createParam ( container, 'EntityName', EntityParam, '', true, false, from );
-	this.createParam ( container, 'x', PosParam, '', true, false, from );
-	this.createParam ( container, 'y', PosParam, '', true, false, from, true );
-	this.createParam ( container, 'z', PosParam, '', true, false, from );
-	this.createParam ( container, 'dataTag', DataTagParam, '', true, true, from, 'entitiy' );*/
+	/*this.createParam ( container, 'EntityName', ParamEntity, from );
+	this.createParam ( container, 'x', ParamPos, from );
+	this.createParam ( container, 'y', ParamPos, from, { height: true } );
+	this.createParam ( container, 'z', ParamPos, from );
+	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true } );*/
 }
 
 CommandSummon.prototype = new Command ( );
@@ -852,8 +812,8 @@ function CommandTell ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', PlayerSelectorParam, from );
-	this.createParam ( container, 'message', TextParam, from );
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'message', ParamText, from );
 }
 
 CommandTell.prototype = new Command ( );
@@ -867,8 +827,8 @@ function CommandTellRaw ( container, from )
 
 	from = from && from.params;
 
-	/*this.createParam ( container, 'player', PlayerSelectorParam, '', true, false, from );
-	this.createParam ( container, 'rawmessage', RawMessageParam, '', true, false, from );*/
+	/*this.createParam ( container, 'player', ParamPlayerSelector, '', true, false, from );
+	this.createParam ( container, 'rawmessage', ParamRawMessage, '', true, false, from );*/
 }
 
 CommandTellRaw.prototype = new Command ( );
@@ -882,7 +842,7 @@ function CommandTestFor ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', PlayerSelectorParam, from );
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
 }
 
 CommandTestFor.prototype = new Command ( );
@@ -896,13 +856,13 @@ function CommandTestForBlock ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'x', PosParam, from );
-	this.createParam ( container, 'y', PosParam, from, { height: true } );
-	this.createParam ( container, 'z', PosParam, from );
-	this.createParam ( container, 'tilename datavalue', BlockParam, from, { ignoreValue: true } );
-	this.createParam ( container, 'tilename', TextParam, from, { ignoreIfHidden: false } );
-	this.createParam ( container, 'datavalue', NumberParam, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
-	this.createParam ( container, 'dataTag', DataTagParam, from, { optional: true, type: 'BlockGeneric' } );
+	this.createParam ( container, 'x', ParamPos, from );
+	this.createParam ( container, 'y', ParamPos, from, { height: true } );
+	this.createParam ( container, 'z', ParamPos, from );
+	this.createParam ( container, 'tilename datavalue', ParamBlock, from, { ignoreValue: true } );
+	this.createParam ( container, 'tilename', ParamText, from, { ignoreIfHidden: false } );
+	this.createParam ( container, 'datavalue', ParamNumber, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
+	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true, type: 'BlockGeneric' } );
 }
 
 CommandTestForBlock.prototype = new Command ( );
@@ -940,8 +900,8 @@ function CommandTime ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'set | add', ListParam, from, { items: ['set','add'] } );
-	this.createParam ( container, 'number', NumberParam, from ); // Add day/night
+	this.createParam ( container, 'set | add', ParamList, from, { items: ['set','add'] } );
+	this.createParam ( container, 'number', ParamNumber, from ); // Add day/night
 }
 
 CommandTime.prototype = new Command ( );
@@ -967,7 +927,7 @@ function CommandTP ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', PlayerSelectorParam, '', true, false, from );
+	this.createParam ( container, 'player', ParamPlayerSelector, '', true, false, from );
 }
 
 CommandTP.prototype = new Command ( );
@@ -981,8 +941,8 @@ function CommandWeather ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'clear | rain | thunder', ListParam, from, { items: ['clear','rain','thunder'] } );
-	this.createParam ( container, 'seconds', NumberParam, from, { optional: true, min:1, max:1000000 } );
+	this.createParam ( container, 'clear | rain | thunder', ParamList, from, { items: ['clear','rain','thunder'] } );
+	this.createParam ( container, 'seconds', ParamNumber, from, { optional: true, min:1, max:1000000 } );
 }
 
 CommandWeather.prototype = new Command ( );
@@ -996,15 +956,14 @@ function CommandXP ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'amount', XPParam, from );
-	this.createParam ( container, 'player', PlayerSelectorParam, from, { optional: true } );
+	this.createParam ( container, 'amount', ParamXP, from );
+	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
 }
 
 CommandXP.prototype = new Command ( );
 
 function Param ( )
 {
-	this.value = '';
 }
 
 Param.prototype = new Command ( );
@@ -1054,7 +1013,7 @@ Param.prototype.update = function ( nextHasValue )
 {
 }
 
-function AchievementParam ( container, defaultValue, optional, from, options )
+function ParamAchievement ( container, defaultValue, optional, from, options )
 {
 	var optgroup, option, i;
 	
@@ -1133,9 +1092,9 @@ function AchievementParam ( container, defaultValue, optional, from, options )
 	container.appendChild ( select );
 }
 
-AchievementParam.prototype = new Param ( );
+ParamAchievement.prototype = new Param ( );
 
-function BlockParam ( container, defaultValue, optional, from, options )
+function ParamBlock ( container, defaultValue, optional, from, options )
 {
 	var option;
 	
@@ -1284,9 +1243,9 @@ function BlockParam ( container, defaultValue, optional, from, options )
 	container.appendChild ( select );
 }
 
-BlockParam.prototype = new Param ( );
+ParamBlock.prototype = new Param ( );
 
-function DataTagParam ( container, defaultValue, optional, from, options )
+function ParamDataTag ( container, defaultValue, optional, from, options )
 {
 	this.tag = null;
 	this.optional = optional;
@@ -1301,11 +1260,11 @@ function DataTagParam ( container, defaultValue, optional, from, options )
 		this.updateType ( options.type );
 }
 
-DataTagParam.prototype = new Param ( );
+ParamDataTag.prototype = new Param ( );
 
-DataTagParam.prototype.createHTML = function ( container, showSelector )
+ParamDataTag.prototype.createHTML = function ( container, showSelector )
 {
-	container.className = 'mc-tag';
+	container.className += ' mc-tag';
 
 	if ( showSelector )
 	{
@@ -1336,7 +1295,7 @@ DataTagParam.prototype.createHTML = function ( container, showSelector )
 	this.options = options;
 }
 
-DataTagParam.prototype.updateType = function ( type )
+ParamDataTag.prototype.updateType = function ( type )
 {
 	var options = this.options;
 
@@ -1345,21 +1304,22 @@ DataTagParam.prototype.updateType = function ( type )
 	if ( this.selector )
 		this.selector.value = type;
 
-	this.tag = new window[('Tag' + type)] ( options, this.tag );
+	console.log ( 'Tag' + type );
+	this.tag = new tags[type] ( options, this.tag );
 }
 
-DataTagParam.prototype.update = function ( nextHasValue )
+ParamDataTag.prototype.update = function ( nextHasValue )
 {
 	if ( this.tag )
 		this.tag.update ( );
 }
 
-DataTagParam.prototype.toString = function ( )
+ParamDataTag.prototype.toString = function ( )
 {
 	return this.tag ? this.tag.toString ( ) : '';
 }
 
-function EnchantmentParam ( container, defaultValue, optional, from, options )
+function ParamEnchantment ( container, defaultValue, optional, from, options )
 {
 	var option;
 	
@@ -1425,9 +1385,9 @@ function EnchantmentParam ( container, defaultValue, optional, from, options )
 	container.appendChild ( select );
 }
 
-EnchantmentParam.prototype = new Param ( );
+ParamEnchantment.prototype = new Param ( );
 
-function ItemParam ( container, defaultValue, optional, from, options )
+function ParamItem ( container, defaultValue, optional, from, options )
 {
 	var option;
 	
@@ -1578,9 +1538,9 @@ function ItemParam ( container, defaultValue, optional, from, options )
 	container.appendChild ( select );
 }
 
-ItemParam.prototype = new Param ( );
+ParamItem.prototype = new Param ( );
 
-function ListParam ( container, defaultValue, optional, from, options )
+function ParamList ( container, defaultValue, optional, from, options )
 {
 	var option;
 	
@@ -1606,9 +1566,9 @@ function ListParam ( container, defaultValue, optional, from, options )
 	container.appendChild ( select );
 }
 
-ListParam.prototype = new Param ( );
+ParamList.prototype = new Param ( );
 
-ListParam.prototype.update = function ( nextHasValue )
+ParamList.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
@@ -1618,7 +1578,7 @@ ListParam.prototype.update = function ( nextHasValue )
 		this.setError ( true );
 }
 
-function PlayerSelectorParam ( container, defaultValue, optional, from )
+function ParamPlayerSelector ( container, defaultValue, optional, from )
 {
 	this.player = null;
 	this.optional = optional;
@@ -1631,11 +1591,11 @@ function PlayerSelectorParam ( container, defaultValue, optional, from )
 	this.updatePlayer ( selectorValue );
 }
 
-PlayerSelectorParam.prototype = new Param ( );
+ParamPlayerSelector.prototype = new Param ( );
 
-PlayerSelectorParam.prototype.createHTML = function ( container )
+ParamPlayerSelector.prototype.createHTML = function ( container )
 {
-	container.className = 'mc-player';
+	container.className += ' mc-player';
 
 	var selector = document.createElement ( 'select' );
 	selector.className = 'mc-player-selector';
@@ -1673,7 +1633,7 @@ PlayerSelectorParam.prototype.createHTML = function ( container )
 	this.options = options;
 }
 
-PlayerSelectorParam.prototype.onSelectorChange = function ( e )
+ParamPlayerSelector.prototype.onSelectorChange = function ( e )
 {
 	e = e || window.event;
 	var target = e.target || e.srcElement;
@@ -1690,7 +1650,7 @@ PlayerSelectorParam.prototype.onSelectorChange = function ( e )
 	updateCommand ( );
 }
 
-PlayerSelectorParam.prototype.updatePlayer = function ( player )
+ParamPlayerSelector.prototype.updatePlayer = function ( player )
 {
 	var options = this.options;
 
@@ -1711,7 +1671,7 @@ PlayerSelectorParam.prototype.updatePlayer = function ( player )
 	}
 }
 
-PlayerSelectorParam.prototype.update = function ( nextHasValue )
+ParamPlayerSelector.prototype.update = function ( nextHasValue )
 {
 	this.selector.className = 'mc-player-selector';
 
@@ -1722,12 +1682,12 @@ PlayerSelectorParam.prototype.update = function ( nextHasValue )
 
 }
 
-PlayerSelectorParam.prototype.toString = function ( )
+ParamPlayerSelector.prototype.toString = function ( )
 {
 	return this.player ? this.player.toString ( ) : '';
 }
 
-function PosParam ( container, defaultValue, optional, from, options )
+function ParamPos ( container, defaultValue, optional, from, options )
 {
 	this.isRelative = from && from.isRelative ? from.isRelative : false;
 	this.value = from && from.value ? from.value : '';
@@ -1759,9 +1719,9 @@ function PosParam ( container, defaultValue, optional, from, options )
 	this.input = input;
 }
 
-PosParam.prototype = new Param ( );
+ParamPos.prototype = new Param ( );
 
-PosParam.prototype.onCheckChange = function ( e )
+ParamPos.prototype.onCheckChange = function ( e )
 {
 	e = e || window.event;
 	var target = e.target || e.srcElement;
@@ -1785,7 +1745,7 @@ PosParam.prototype.onCheckChange = function ( e )
 	updateCommand ( );
 }
 
-PosParam.prototype.update = function ( nextHasValue )
+ParamPos.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
@@ -1810,12 +1770,12 @@ PosParam.prototype.update = function ( nextHasValue )
 		this.setError ( true );
 }
 
-PosParam.prototype.toString = function ( )
+ParamPos.prototype.toString = function ( )
 {
 	return ( this.isRelative ? '~' : '' ) + this.value;
 }
 
-function PotionParam ( container, defaultValue, optional, from, options )
+function ParamPotion ( container, defaultValue, optional, from, options )
 {
 	this.optional = optional;
 	var potions = {
@@ -1868,58 +1828,58 @@ function PotionParam ( container, defaultValue, optional, from, options )
 	container.appendChild ( select );
 }
 
-PotionParam.prototype = new Param ( );
+ParamPotion.prototype = new Param ( );
 
-function RawMessageParam ( container, defaultValue, optional, from )
+function ParamRawMessage ( container, defaultValue, optional, from )
 {
 
 }
 
-RawMessageParam.prototype = new Param ( );
+ParamRawMessage.prototype = new Param ( );
 
-function ScoreboardObjectivesParam ( container, defaultValue, optional, from, options )
-{
-	var options = document.createElement ( 'table' );
-	options.className = 'mc-scoreboard-options';
-	container.appendChild ( options );
-
-	this.createParam ( container, 'list | add | remove | setdisplay', ListParam, from, { items: ['list','add','remove','setdisplay'] } );
-}
-
-ScoreboardObjectivesParam.prototype = new Param ( );
-
-function ScoreboardPlayersParam ( container, defaultValue, optional, from, options )
+function ParamScoreboardObjectives ( container, defaultValue, optional, from, options )
 {
 	var options = document.createElement ( 'table' );
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
 
-	this.createParam ( container, 'set | add | remove | reset | list', ListParam, from, { items: ['set','add','remove','reset','list'] } );
+	this.createParam ( container, 'list | add | remove | setdisplay', ParamList, from, { items: ['list','add','remove','setdisplay'] } );
 }
 
-ScoreboardPlayersParam.prototype = new Param ( );
+ParamScoreboardObjectives.prototype = new Param ( );
 
-function ScoreboardTeamsParam ( container, defaultValue, optional, from, options )
+function ParamScoreboardPlayers ( container, defaultValue, optional, from, options )
 {
 	var options = document.createElement ( 'table' );
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
 
-	this.createParam ( container, 'list | add | remove | empty | join | leave | option', ListParam, from, { items: ['list','add','remove','empty','join','leave','option'] } );
+	this.createParam ( container, 'set | add | remove | reset | list', ParamList, from, { items: ['set','add','remove','reset','list'] } );
 }
 
-ScoreboardTeamsParam.prototype = new Param ( );
+ParamScoreboardPlayers.prototype = new Param ( );
 
-function StaticParam ( container, defaultValue, optional, from, options )
+function ParamScoreboardTeams ( container, defaultValue, optional, from, options )
+{
+	var options = document.createElement ( 'table' );
+	options.className = 'mc-scoreboard-options';
+	container.appendChild ( options );
+
+	this.createParam ( container, 'list | add | remove | empty | join | leave | option', ParamList, from, { items: ['list','add','remove','empty','join','leave','option'] } );
+}
+
+ParamScoreboardTeams.prototype = new Param ( );
+
+function ParamStatic ( container, defaultValue, optional, from, options )
 {
 	this.value = options.defaultValue;
 
 	container.appendChild ( document.createTextNode ( options.defaultValue ) );
 }
 
-StaticParam.prototype = new Param ( );
+ParamStatic.prototype = new Param ( );
 
-function TextParam ( container, defaultValue, optional, from, options )
+function ParamText ( container, defaultValue, optional, from, options )
 {
 	this.value = from && from.value ? from.value : '';
 	this.optional = optional;
@@ -1934,9 +1894,9 @@ function TextParam ( container, defaultValue, optional, from, options )
 	this.input = input;
 }
 
-TextParam.prototype = new Param ( );
+ParamText.prototype = new Param ( );
 
-TextParam.prototype.update = function ( nextHasValue )
+ParamText.prototype.update = function ( nextHasValue )
 {
 	var required = !this.optional || nextHasValue || false;
 
@@ -1944,9 +1904,9 @@ TextParam.prototype.update = function ( nextHasValue )
 		this.input.className = this.value === '' ? 'error' : '';
 }
 
-SoundParam = TextParam;
+var ParamSound = ParamText;
 
-function NumberParam ( container, defaultValue, optional, from, options )
+function ParamNumber ( container, defaultValue, optional, from, options )
 {
 	this.value = from && from.value ? from.value : '';
 	this.optional = optional;
@@ -1972,9 +1932,9 @@ function NumberParam ( container, defaultValue, optional, from, options )
 	this.input = input;
 }
 
-NumberParam.prototype = new Param ( );
+ParamNumber.prototype = new Param ( );
 
-NumberParam.prototype.update = function ( nextHasValue )
+ParamNumber.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
@@ -1999,7 +1959,7 @@ NumberParam.prototype.update = function ( nextHasValue )
 		this.setError ( true );
 }
 
-function XPParam ( container, defaultValue, optional, from, options )
+function ParamXP ( container, defaultValue, optional, from, options )
 {
 	this.isLevels = from && from.isLevels ? from.isLevels : false;
 	this.value = from && from.value ? from.value : '';
@@ -2026,9 +1986,9 @@ function XPParam ( container, defaultValue, optional, from, options )
 	container.appendChild ( document.createTextNode ( ' Levels' ) );
 }
 
-XPParam.prototype = new Param ( );
+ParamXP.prototype = new Param ( );
 
-XPParam.prototype.onCheckChange = function ( e )
+ParamXP.prototype.onCheckChange = function ( e )
 {
 	e = e || window.event;
 	var target = e.target || e.srcElement;
@@ -2043,7 +2003,7 @@ XPParam.prototype.onCheckChange = function ( e )
 	updateCommand ( );
 }
 
-XPParam.prototype.update = function ( nextHasValue )
+ParamXP.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
@@ -2062,7 +2022,7 @@ XPParam.prototype.update = function ( nextHasValue )
 		this.setError ( true );
 }
 
-XPParam.prototype.toString = function ( )
+ParamXP.prototype.toString = function ( )
 {
 	return this.value + ( this.isLevels ? 'L' : '' );
 }
@@ -2076,7 +2036,7 @@ function PlayerUsername ( container, optional, from )
 	row.appendChild ( title );
 
 	var cell = document.createElement ( 'td' );
-	this.param = new TextParam ( cell, '', optional, from && from.param );
+	this.param = new ParamText ( cell, '', optional, from && from.param );
 	row.appendChild ( cell );
 
 	container.appendChild ( row );
@@ -2100,17 +2060,17 @@ function PlayerSelector ( container, type, optional, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'x', PosParam, from, { optional: true } );
-	this.createParam ( container, 'y', PosParam, from, { optional: true, height:true } );
-	this.createParam ( container, 'z', PosParam, from, { optional: true } );
-	this.createParam ( container, 'r', NumberParam, from, { optional: true } );
-	this.createParam ( container, 'rm', NumberParam, from, { optional: true } );
-	this.createParam ( container, 'm', NumberParam, from, { optional: true } );
-	this.createParam ( container, 'c', NumberParam, from, { optional: true } );
-	this.createParam ( container, 'l', NumberParam, from, { optional: true } );
-	this.createParam ( container, 'lm', NumberParam, from, { optional: true } );
-	//this.createParam ( container, 'team', TextParam, from, { optional: true } );
-	//this.createParam ( container, 'name', TextParam, from, { optional: true } );
+	this.createParam ( container, 'x', ParamPos, from, { optional: true } );
+	this.createParam ( container, 'y', ParamPos, from, { optional: true, height:true } );
+	this.createParam ( container, 'z', ParamPos, from, { optional: true } );
+	this.createParam ( container, 'r', ParamNumber, from, { optional: true } );
+	this.createParam ( container, 'rm', ParamNumber, from, { optional: true } );
+	this.createParam ( container, 'm', ParamNumber, from, { optional: true } );
+	this.createParam ( container, 'c', ParamNumber, from, { optional: true } );
+	this.createParam ( container, 'l', ParamNumber, from, { optional: true } );
+	this.createParam ( container, 'lm', ParamNumber, from, { optional: true } );
+	//this.createParam ( container, 'team', ParamText, from, { optional: true } );
+	//this.createParam ( container, 'name', ParamText, from, { optional: true } );
 
 	var row = document.createElement ( 'tr' );
 
@@ -2154,18 +2114,18 @@ function PlayerSelector ( container, type, optional, from )
 		{
 			if ( typeof from[i].name == 'string' && from[i].name == 'name' )
 			{
-				this.createParam ( container, 'name', TextParam, from, { optional: true, remove: true, index: nameIndex++ } );
+				this.createParam ( container, 'name', ParamText, from, { optional: true, remove: true, index: nameIndex++ } );
 			}
 			else if ( typeof from[i].name == 'string' && from[i].name == 'team' )
 			{
-				this.createParam ( container, 'team', TextParam, from, { optional: true, remove: true, index: teamIndex++ } );
+				this.createParam ( container, 'team', ParamText, from, { optional: true, remove: true, index: teamIndex++ } );
 			}
 			else if ( typeof from[i].name !== 'string' && from[i].name.prefix == 'score_' )
 			{
 				if ( from[i].name.suffix && from[i].name.suffix == '_min' )
-					this.createParam ( container, 'score__min', TextParam, from, { optional: true, remove: true, index: scoreMinIndex++, name: from[i].name.input.value } );
+					this.createParam ( container, 'score__min', ParamText, from, { optional: true, remove: true, index: scoreMinIndex++, name: from[i].name.input.value } );
 				else
-					this.createParam ( container, 'score_', TextParam, from, { optional: true, remove: true, index: scoreIndex++, name: from[i].name.input.value } );
+					this.createParam ( container, 'score_', ParamText, from, { optional: true, remove: true, index: scoreIndex++, name: from[i].name.input.value } );
 			}
 		}
 	}
@@ -2283,22 +2243,22 @@ PlayerSelector.prototype.createParam = function ( container, name, type, from, o
 
 PlayerSelector.prototype.onAddNameClick = function ( )
 {
-	this.createParam ( this.container, 'name', TextParam, null, { optional: true, remove: true } );
+	this.createParam ( this.container, 'name', ParamText, null, { optional: true, remove: true } );
 }
 
 PlayerSelector.prototype.onAddTeamClick = function ( )
 {
-	this.createParam ( this.container, 'team', TextParam, null, { optional: true, remove: true } );
+	this.createParam ( this.container, 'team', ParamText, null, { optional: true, remove: true } );
 }
 
 PlayerSelector.prototype.onAddScoreMinClick = function ( )
 {
-	this.createParam ( this.container, 'score__min', TextParam, null, { optional: true, remove: true } );
+	this.createParam ( this.container, 'score__min', ParamText, null, { optional: true, remove: true } );
 }
 
 PlayerSelector.prototype.onAddScoreMaxClick = function ( )
 {
-	this.createParam ( this.container, 'score_', TextParam, null, { optional: true, remove: true } );
+	this.createParam ( this.container, 'score_', ParamText, null, { optional: true, remove: true } );
 }
 
 PlayerSelector.prototype.onRemoveClick = onRemoveClick;
@@ -2344,7 +2304,7 @@ Tag.prototype.createTag = function ( container, name, type, children, optional )
 
 	var cell = document.createElement ( 'td' );
 	console.log ( 'Tag'+type );
-	var value = new window['Tag'+type] ( cell, children, optional );
+	var value = new tags[type] ( cell, children, optional );
 	row.appendChild ( cell );
 
 	container.appendChild ( row );
@@ -2664,9 +2624,9 @@ function TagCompound ( container, structure, optional, from )
 	{
 		var tag = structure[name];
 		if ( typeof tag == 'string' )
-			this.createTag ( this.table, name, tag, null, true, from && from.tags[name] || null );
+			this.createTag ( this.table, name, tag, null, true, from && from.tags && from.tags[name] || null );
 		else
-			this.createTag ( this.table, name, tag.type, tag.children || null, tag.optional || true, from && from.tags[name] || null );
+			this.createTag ( this.table, name, tag.type, tag.children || null, tag.optional || true, from && from.tags && from.tags[name] || null );
 	}
 
 	var button = document.createElement ( 'button' );
@@ -2768,7 +2728,8 @@ TagList.prototype.addItem = function ( )
 
 	this.div.appendChild ( div );
 
-	var value = new window['Tag' + this.type] ( div, this.children, true )
+	console.log ( 'Tag' + this.type );
+	var value = new tags[this.type] ( div, this.children, true )
 
 	this.tags.push ( {
 		value: value,
@@ -2793,24 +2754,24 @@ TagList.prototype.onAddButtonClick = function ( e )
 
 function TagEnchantment ( container, structure, optional )
 {
-	this.tag = new EnchantmentParam ( container, '', true, null, {} );
+	this.tag = new ParamEnchantment ( container, '', true, null, {} );
 }
 
 TagEnchantment.prototype = new Tag ( );
 
 function TagShort ( container, structure, optional )
 {
-	this.tag = new NumberParam ( container, '', optional, null, {} );
+	this.tag = new ParamNumber ( container, '', optional, null, {} );
 }
 
 TagShort.prototype = new Tag ( );
 
-TagInt = TagShort;
-TagRGB = TagShort;
+var TagInt = TagShort;
+var TagRGB = TagShort;
 
 function TagString ( container, structure, optional )
 {
-	this.tag = new TextParam ( container, '', optional, null, {} );
+	this.tag = new ParamText ( container, '', optional, null, {} );
 
 	var span = document.createElement ( 'span' );
 	span.className = 'input-button';
@@ -2946,7 +2907,8 @@ TagSelector.prototype.updateTag = function ( tag )
 
 	this.selector.value = tag;
 
-	this.tag = new window['Tag'+tag] ( options );
+	console.log ( 'Tag' + tag );
+	this.tag = new tags[tag] ( options );
 	//this.tag = new PlayerSelector ( options, player, this.optional, this.player );
 }
 
@@ -2962,135 +2924,6 @@ TagSelector.prototype.toString = function ( )
 	return this.tag ? this.tag.toString ( ) : '';
 }
 
-/*
-
-function createCommand ( container )
-{
-	container.className = 'mc-command';
-
-	var selector = document.createElement ( 'select' );
-	selector.className = 'mc-command-selector';
-	selector.addEventListener ( 'change', onCommandChange );
-	container.appendChild ( selector );
-
-	for ( var command in commands )
-	{
-		var option = document.createElement ( 'option' );
-		option.appendChild ( document.createTextNode ( command ) );
-		selector.appendChild ( option );
-	}
-
-	var options = document.createElement ( 'table' );
-	options.className = 'mc-command-options';
-	container.appendChild ( options );
-
-	container.selector = selector;
-	container.options = options;
-
-	updateCommand ( container, selector.value );
-
-	return container;
-}
-
-function updateCommand ( container, command )
-{
-	var options = container.options;
-
-	options.innerHTML = '';
-
-	container.command = new Command ( command, container.command );
-
-	container.command.toHTML ( options );
-}
-
-function createCommandParam ( param )
-{
-	var cell = document.createElement ( 'td' );
-	switch ( param.type )
-	{
-		case 'player':
-			createPlayer ( cell );
-		break;
-		case 'static':
-			createStatic ( cell );
-		break;
-		default:
-			createUnknown ( cell );
-	}
-	return cell;
-}
-
-function onPlayerChange ( e )
-{
-	e = e || window.event;
-	var target = e.target || e.srcElement;
-
-	var selector = target.value;
-
-	if ( !selector )
-		return;
-
-	var container = target.parentNode;
-
-	updatePlayer ( container, selector );
-}
-
-function createPlayer ( container )
-{
-}
-
-function readPlayer ( container )
-{
-	var selector = container.selector;
-	var options = container.options;
-
-	var player = new Player ( );
-
-	switch ( selector.value )
-	{
-		case 'Username':
-			player.text = readUnknown ( options.firstChild.children[1] )
-		break;
-		default:
-			player.text = readUnknown ( options.firstChild.children[1] )
-	}
-
-	return player;
-}
-
-function updatePlayer ( container, selector, values )
-{
-	var options = container.options;
-
-	options.innerHTML = '';
-
-	container.player = new Player ( selector, container.player );
-
-	container.player.toHTML ( options );
-}
-
-function createStatic ( container )
-{
-	container.className = 'mc-static';
-
-	return container;
-}
-
-function createUnknown ( container )
-{
-	container.className = 'mc-unknown';
-
-	var input = document.createElement ( 'input' );
-	container.appendChild ( input );
-
-	return container;
-}
-
-function readUnknown ( container )
-{
-	return container.firstChild.value;
-}*/
-
 function onGenerateClick ( e )
 {
 	e = e || window.event;
@@ -3104,52 +2937,105 @@ function onGenerateClick ( e )
 
 function updateCommand ( )
 {
-	var text = document.getElementById ( 'mc-commands-text' );
-
-	commandSelector.update ( );
-
-	text.value = "";
-
-	text.value = commandSelector.toString ( );
-
-	text.select ( );
-
-	text.className = document.getElementById('mc-command-reader').getElementsByClassName ( 'error' ).length ? 'error' : '';
-
-	//console.log ( commandSelector );
-
-	//console.log ( commandSelector.toString () );
+	var selector, text, reader;
+	
+	for ( var i = 0; i < selectors.length; i++ )
+	{
+		selector = selectors[i];
+		text = selector.text;
+		reader = selector.reader;
+		
+		selector.update ( );
+		
+		text.value = "";
+		text.value = selector.toString ( );
+		//text.select ( );
+		
+		text.className = reader.getElementsByClassName ( 'error' ).length ? 'mc-commands-text error' : 'mc-commands-text';
+	}
 }
 
 function createSelector ( container )
 {
-	/*var commandSelector = createCommand ( document.createElement ( 'div' ) );
-	container.appendChild ( commandSelector );*/
-
 	var commandReader = document.createElement ( 'div' );
-	commandReader.id = 'mc-command-reader';
+	commandReader.className = 'mc-command-reader';
 	container.appendChild ( commandReader );
 
-	commandSelector = new CommandSelector ( commandReader );
-	commandReader.command = commandSelector;
-
 	var commandText = document.createElement ( 'textarea' );
-	commandText.id = 'mc-commands-text';
+	commandText.className = 'mc-commands-text';
 	commandText.readOnly = true;
 	commandText.cols = 100;
 	commandText.rows = 10;
 	commandText.addEventListener ( 'click', ( function ( textarea ) { return function ( e ) { textarea.select ( ) } } ) ( commandText ) );
 	container.appendChild ( commandText );
 
-	/*var button = document.createElement ( 'button' );
-	button.appendChild ( document.createTextNode ( 'Generate Command' ) );
-	button.addEventListener ( 'click', onGenerateClick );
-	commandReader.appendChild ( button );
-
-	container.appendChild ( commandReader );*/
+	var commandSelector = new CommandSelector ( commandReader, commandText );
+	
+	selectors.push ( commandSelector );
 
 	updateCommand ( );
 }
 
-var parent = document.getElementById ( 'mc-commands' );
-createSelector ( parent )
+commands = {
+	'achievement': CommandAchievement,
+	'clear': CommandClear,
+	'debug': CommandDebug,
+	'defaultgamemode': CommandDefaultGamemode,
+	'difficulty': CommandDifficulty,
+	'effect': CommandEffect,
+	'enchant': CommandEnchant,
+	'gamemode': CommandGamemode,
+	'gamerule': CommandGameRule,
+	'give': CommandGive,
+	'me': CommandMe,
+	//'kill': CommandKill,
+	//'publish': CommandPublish,
+	'playsound': CommandPlaySound,
+	'say': CommandSay,
+	'scoreboard': CommandScoreBoard,
+	//'seed': CommandSeed,
+	'setblock': CommandSetBlock,
+	'spawnpoint': CommandSpawnPoint,
+	'spreadplayers': CommandSpreadPlayers,
+	'summon': CommandSummon,
+	'tell': CommandTell,
+	'tellraw': CommandTellRaw,
+	'testfor': CommandTestFor,
+	'testforblock': CommandTestForBlock,
+	'time': CommandTime,
+	'toggledownfall': CommandToggleDownFall,
+	'tp': CommandTP,
+	'weather': CommandWeather,
+	'xp': CommandXP
+};
+
+tags = {
+	BlockGeneric: TagBlockGeneric,
+	ItemGeneric: TagItemGeneric,
+	ItemBookAndQuill: TagItemBookAndQuill,
+	ItemWrittenBook: TagItemWrittenBook,
+	ItemColourable: TagItemColourable,
+	
+	Compound: TagCompound,
+	List: TagList,
+	Enchantment: TagEnchantment,
+	Short: TagShort,
+	Int: TagInt,
+	RGB: TagRGB,
+	String: TagString
+}
+
+params = {
+	Number: ParamNumber
+}
+
+var mcCommands = {
+	commands: commands,
+	params: params,
+	tags: tags,
+	selectors: selectors,
+	create: createSelector
+};
+window.mcCommands = mcCommands;
+
+})(document,window);

@@ -24,7 +24,7 @@ body,
 	height: 100%;
 }
 
-#mc-commands-text {
+.mc-commands-text {
 	position: absolute;
 	left: 0;
 	right: 0;
@@ -37,7 +37,7 @@ body,
 	border-top: 2px solid #ccc;
 }
 
-#mc-command-reader {
+.mc-command-reader {
 	position: absolute;
 	left: 20px;
 	right: 0;

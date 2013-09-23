@@ -3010,32 +3010,32 @@ commands = {
 };
 
 tags = {
-	BlockGeneric: TagBlockGeneric,
-	ItemGeneric: TagItemGeneric,
-	ItemBookAndQuill: TagItemBookAndQuill,
-	ItemWrittenBook: TagItemWrittenBook,
-	ItemColourable: TagItemColourable,
+	'BlockGeneric': TagBlockGeneric,
+	'ItemGeneric': TagItemGeneric,
+	'ItemBookAndQuill': TagItemBookAndQuill,
+	'ItemWrittenBook': TagItemWrittenBook,
+	'ItemColourable': TagItemColourable,
 	
-	Compound: TagCompound,
-	List: TagList,
-	Enchantment: TagEnchantment,
-	Short: TagShort,
-	Int: TagInt,
-	RGB: TagRGB,
-	String: TagString
+	'Compound': TagCompound,
+	'List': TagList,
+	'Enchantment': TagEnchantment,
+	'Short': TagShort,
+	'Int': TagInt,
+	'RGB': TagRGB,
+	'String': TagString
 }
 
 params = {
-	Number: ParamNumber
+	'Number': ParamNumber
 }
 
 var mcCommands = {
-	commands: commands,
-	params: params,
-	tags: tags,
-	selectors: selectors,
-	create: createSelector
+	'commands': commands,
+	'params': params,
+	'tags': tags,
+	'selectors': selectors,
+	'create': createSelector
 };
-window.mcCommands = mcCommands;
+window['mcCommands'] = mcCommands;
 
 })(document,window);

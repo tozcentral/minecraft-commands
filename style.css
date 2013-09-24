@@ -1,14 +1,16 @@
 table {
-	width: 100%;
+	width: auto;
 }
 
 th, td {
 	vertical-align: top;
 	line-height: 20px;
+	white-space: pre;
 }
 
 th {
 	text-align: left;
+	min-width: 200px;
 	width: 200px;
 }
 

@@ -2849,21 +2849,29 @@ PlayerSelector.prototype.createParam = function ( container, name, type, from, o
 PlayerSelector.prototype.onAddNameClick = function ( )
 {
 	this.createParam ( this.container, 'name', ParamText, null, { optional: true, remove: true } );
+	
+	updateCommand ( );
 }
 
 PlayerSelector.prototype.onAddTeamClick = function ( )
 {
 	this.createParam ( this.container, 'team', ParamText, null, { optional: true, remove: true } );
+	
+	updateCommand ( );
 }
 
 PlayerSelector.prototype.onAddScoreMinClick = function ( )
 {
 	this.createParam ( this.container, 'score__min', ParamText, null, { optional: true, remove: true } );
+	
+	updateCommand ( );
 }
 
 PlayerSelector.prototype.onAddScoreMaxClick = function ( )
 {
 	this.createParam ( this.container, 'score_', ParamText, null, { optional: true, remove: true } );
+	
+	updateCommand ( );
 }
 
 PlayerSelector.prototype.onRemoveClick = onRemoveClick;
@@ -2885,10 +2893,13 @@ PlayerSelector.prototype.toString = function ( )
 	for ( var i = 0; i < this.params.length; i++ )
 	{
 		var name = this.params[i].name;
+		
 		if ( typeof name != 'string' )
 			name = ( name.prefix || '' ) + name.input.value + ( name.suffix || '' )
+			
 		var value = this.params[i].value.toString ( );
-		if ( value !== '' )
+		
+		if ( value !== '' || name === 'team' )
 			params.push ( name + '=' + value );
 	}
 

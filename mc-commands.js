@@ -5,6 +5,13 @@ var params = {};
 var tags = {};
 var selectors = [];
 
+var groupPrefix = 0;
+
+function quote ( value )
+{
+	return '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'") + '"'
+}
+
 function onRemoveClick ( e, parent )
 {
 	e = e || window.event;
@@ -311,7 +318,7 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 	{
 		var radiobox = document.createElement ( 'input' )
 		radiobox.type = 'radio'
-		radiobox.name = options.group
+		radiobox.name = ( options && options.groupPrefix || 'needs-a-prefix' ) + '-' + options.group
 		radiobox.index = options.groupIndex
 		radiobox.checked = !this.groupExists ( options.group )
 		radiobox.style.visibility = ( this.groupRadioExists ( options.group, options.groupIndex ) ? 'hidden' : '' )
@@ -338,7 +345,7 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 		container: row,
 		group: options.group,
 		groupIndex: options.groupIndex,
-		groupRadiobox: radiobox
+		groupRadiobox: options.groupRadiobox
 	}
 	this.paramsOrdered.push ( this.params[name] );
 }
@@ -936,7 +943,7 @@ function CommandTellRaw ( container, from )
 	from = from && from.params;
 
 	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'rawmessage', ParamRawMessage, from, { isRoot: true } );
+	this.createParam ( container, 'rawmessage', ParamRawMessage, from, { isRoot: true, hasEvents: true } );
 }
 
 CommandTellRaw.prototype = new Command ( );
@@ -1032,14 +1039,15 @@ function CommandTP ( container, from )
 	this.description = '';
 	this.params = {};
 	this.paramsOrdered = [];
+	this.groupPrefix = 'tp-' + (++groupPrefix)
 
 	from = from && from.params;
 
 	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'destination player', ParamPlayerSelector, from, { optional: true, group: 'dest', groupIndex: 0 } );
-	this.createParam ( container, 'x', ParamPos, from, { group: 'dest', groupIndex: 1 } );
-	this.createParam ( container, 'y', ParamPos, from, { group: 'dest', groupIndex: 1 } );
-	this.createParam ( container, 'z', ParamPos, from, { group: 'dest', groupIndex: 1 } );
+	this.createParam ( container, 'destination player', ParamPlayerSelector, from, { optional: true, group: 'dest', groupIndex: 0, groupPrefix: this.groupPrefix } );
+	this.createParam ( container, 'x', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
+	this.createParam ( container, 'y', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
+	this.createParam ( container, 'z', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
 }
 
 CommandTP.prototype = new Command ( );
@@ -1120,10 +1128,18 @@ Param.prototype.setValue = function ( v )
 Param.prototype.toString = function ( needValue )
 {
 	var value = this.value;
+	
+	if ( this.options && this.options.quote && value !== '' )
+		value = quote ( value )
+	
 	if ( value === '' && needValue && this.input && this.input.placeholder )
 	{
 		value = this.input.placeholder;
+	
+		if ( this.options && this.options.quote && value !== '' )
+			value = quote ( value )
 	}
+	
 	return value;
 }
 
@@ -1401,6 +1417,31 @@ ParamBoolean.prototype.onCheckboxChange = function ( e )
 	this.value = this.checked == 'true' ? 'true' : ( this.optional ? '' : 'false' )
 
 	updateCommand ( );
+}
+
+function ParamCommandSelector ( container, defaultValue, optional, from, options )
+{
+	this.optional = optional;
+	this.options = options;
+
+	this.commandSelector = new CommandSelector ( container );
+}
+
+ParamCommandSelector.prototype = new Param ( );
+
+ParamCommandSelector.prototype.update = function ( )
+{
+	this.commandSelector.update ( );
+}
+
+ParamCommandSelector.prototype.toString = function ( )
+{
+	var value = this.commandSelector.toString ( );
+	
+	if ( this.options && this.options.quote )
+		value = quote ( value )
+	
+	return value 
 }
 
 function ParamDataTag ( container, defaultValue, optional, from, options )
@@ -1858,12 +1899,15 @@ function ParamPos ( container, defaultValue, optional, from, options )
 	this.optional = optional;
 	this.options = options;
 
+	var label = document.createElement ( 'label' );
+	container.appendChild ( label );
+
 	var input = document.createElement ( 'input' );
 	input.type = 'checkbox'
 	input.checked = this.isRelative;
 	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onCheckChange ( e ) } } ) ( this ) );
-	container.appendChild ( input );
-	container.appendChild ( document.createTextNode ( ' Relative ' ) );
+	label.appendChild ( input );
+	label.appendChild ( document.createTextNode ( ' Relative ' ) );
 
 	var input = document.createElement ( 'input' );
 	input.type = 'number'
@@ -2001,22 +2045,28 @@ function ParamRawMessage ( container, defaultValue, optional, from, options )
 	this.optional = optional;
 	this.params = {};
 	this.paramsOrdered = [];
+	this.groupPrefix = 'raw-message-' + (++groupPrefix)
 	
 	container.className += ' mc-raw-message';
 
 	var table = document.createElement ( 'table' );
 	container.appendChild ( table );
 	
-	this.createParam ( table, 'text', ParamText, from, { group: 'text', groupIndex: 0 } );
-	this.createParam ( table, 'translate', ParamText, from, { group: 'text', groupIndex: 1 } );
+	this.createParam ( table, 'text', ParamText, from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true } );
+	this.createParam ( table, 'translate', ParamText, from, { group: 'text', groupIndex: 1, groupPrefix: this.groupPrefix, quote: true } );
 	this.createParam ( table, 'color', ParamText, from, { optional: true } );
 	this.createParam ( table, 'bold', ParamBoolean, from, { optional: true } );
 	this.createParam ( table, 'underlined', ParamBoolean, from, { optional: true } );
 	this.createParam ( table, 'italic', ParamBoolean, from, { optional: true } );
 	this.createParam ( table, 'strikethrough', ParamBoolean, from, { optional: true } );
-	this.createParam ( table, 'obfusated', ParamBoolean, from, { optional: true } );
+	this.createParam ( table, 'obfuscated', ParamBoolean, from, { optional: true } );
+	if ( options && options.hasEvents )
+	{
+		this.createParam ( table, 'clickEvent', ParamRawMessageEvent, from, { optional: true, items: ['run_command'] } );
+		this.createParam ( table, 'hoverEvent', ParamRawMessageEvent, from, { optional: true, items: ['show_text'] } );
+	}
 	if ( options && options.isRoot )
-		this.createParam ( table, 'extra', ParamRawMessageExtras, from, { optional: true } );
+		this.createParam ( table, 'extra', ParamRawMessageExtras, from, { optional: true, hasEvents: options && options.hasEvents } );
 }
 
 ParamRawMessage.prototype = new Param ( );
@@ -2041,6 +2091,7 @@ ParamRawMessage.prototype.update = function ( )
 ParamRawMessage.prototype.toString = function ( previous )
 {
 	var items = [];
+	var hasText = false
 	
 	for ( var i = 0; i < this.paramsOrdered.length; i++ )
 	{
@@ -2053,13 +2104,7 @@ ParamRawMessage.prototype.toString = function ( previous )
 		var value = param.value.toString ( ( name == 'extra' ? this.params : null ) );
 		
 		if ( previous instanceof Object )
-		{	
-			if ( name == 'bold' )
-			{
-				console.log ( param.value.checked );
-				console.log ( previous[name].value.checked );
-			}
-				
+		{
 			if ( param.value instanceof ParamBoolean && previous[name] )
 			{
 				if ( param.value.checked == previous[name].value.checked )
@@ -2074,8 +2119,16 @@ ParamRawMessage.prototype.toString = function ( previous )
 			}
 		}
 		
+		if ( name == 'text' && value !== '' )
+			hasText = value
+		
 		if ( value != '' )
 			items.push ( name + ':' + value );
+	}
+	
+	if ( items.length == 1 && hasText !== false )
+	{
+		return hasText
 	}
 	
 	items = items.join(',')
@@ -2083,9 +2136,133 @@ ParamRawMessage.prototype.toString = function ( previous )
 	return items == '' ? '' : '{' + items + '}'
 }
 
+function ParamRawMessageEvent ( container, defaultValue, optional, from, options )
+{
+	this.optional = optional;
+	this.options = options;
+	
+	this.param = from && form.param
+	
+	this.createHTML ( container )
+
+	//this.addItem ( );
+}
+
+ParamRawMessageEvent.prototype = new Param ( );
+
+ParamRawMessageEvent.prototype.createHTML = function ( container )
+{
+	var table, row, cell, selector, option, optionsContainer;
+	
+	table = document.createElement ( 'table' );
+	container.appendChild ( table );
+	
+	row = document.createElement ( 'tr' );
+	table.appendChild ( row );
+	
+	cell = document.createElement ( 'th' );
+	cell.appendChild ( document.createTextNode ( 'action' ) );
+	row.appendChild ( cell );
+	
+	cell = document.createElement ( 'td' );
+	row.appendChild ( cell );
+
+	selector = document.createElement ( 'select' );
+	selector.className = 'mc-event-selector';
+	selector.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
+	cell.appendChild ( selector );
+
+	if ( this.optional )
+	{
+		option = document.createElement ( 'option' );
+		option.value = '';
+		option.appendChild ( document.createTextNode ( 'None' ) );
+		selector.appendChild ( option );
+	}
+	
+	var items = this.options && this.options.items || [];
+	for ( var i = 0; i < items.length; i++ )
+	{
+		option = document.createElement ( 'option' );
+		option.appendChild ( document.createTextNode ( items[i] ) );
+		selector.appendChild ( option );
+	}
+	
+	row = document.createElement ( 'tr' );
+	table.appendChild ( row );
+	
+	cell = document.createElement ( 'th' );
+	cell.appendChild ( document.createTextNode ( 'value' ) );
+	row.appendChild ( cell );
+	
+	cell = document.createElement ( 'td' );
+	row.appendChild ( cell );
+
+	optionsContainer = document.createElement ( 'table' );
+	optionsContainer.className = 'mc-event-options';
+	cell.appendChild ( optionsContainer );
+
+	this.selector = selector;
+	this.optionsContainer = optionsContainer;
+}
+
+ParamRawMessageEvent.prototype.onSelectorChange = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+
+	var param = target.value;
+
+	this.updateParam ( param );
+
+	updateCommand ( );
+}
+
+ParamRawMessageEvent.prototype.updateParam = function ( param )
+{
+	var optionsContainer = this.optionsContainer;
+
+	optionsContainer.innerHTML = '';
+
+	this.selector.value = param;
+	
+	switch ( param )
+	{
+		case '':
+			this.param = null
+		break
+		case 'run_command':
+			this.param = new ParamCommandSelector ( optionsContainer, null, false, this.param, { quote: true } );
+		break
+		case 'show_text':
+			this.param = new ParamRawMessage ( optionsContainer, null, false, this.param );
+		break
+	}
+}
+
+ParamRawMessageEvent.prototype.update = function ( )
+{
+	if ( this.param )
+		this.param.update ( );
+}
+
+ParamRawMessageEvent.prototype.toString = function ( )
+{
+	if ( !this.param )
+		return '';
+		
+	var value = this.param.toString ( );
+	
+	if ( value !== '' )
+		return '{action:' + this.selector.value + ',value:' + value + '}'
+	
+	return '';
+}
+
 function ParamRawMessageExtras ( container, defaultValue, optional, from, options )
 {
 	this.optional = optional;
+	this.options = options;
 	this.items = [];
 
 	var table = document.createElement ( 'table' );
@@ -2117,7 +2294,7 @@ ParamRawMessageExtras.prototype.addItem = function ( )
 
 	this.table.appendChild ( row );
 
-	var value = new ParamRawMessage ( cell, '', true );
+	var value = new ParamRawMessage ( cell, '', true, null, { hasEvents: this.options && this.options.hasEvents } );
 
 	this.items.push ( {
 		value: value,
@@ -2126,6 +2303,8 @@ ParamRawMessageExtras.prototype.addItem = function ( )
 
 	updateCommand ( );
 }
+
+ParamRawMessageExtras.prototype.onRemoveClick = onRemoveClick;
 
 ParamRawMessageExtras.prototype.onAddButtonClick = function ( e )
 {
@@ -2369,6 +2548,9 @@ function PlayerUsername ( container, optional, from )
 	var cell = document.createElement ( 'td' );
 	this.param = new ParamText ( cell, '', optional, from && from.param );
 	row.appendChild ( cell );
+	
+	if ( from && from instanceof PlayerSelector )
+		this.param.setValue ( from.toString ( ) )
 
 	container.appendChild ( row );
 }
@@ -3144,7 +3326,7 @@ TagString.prototype.toString = function ( )
 {
 	var value = this.tag.toString ( );
 	if ( value !== '' )
-		value = '"' + value.replace('"', '\"') + '"'
+		value = quote ( value )
 
 	return value;
 }
@@ -3357,7 +3539,8 @@ tags = {
 }
 
 params = {
-	'Number': ParamNumber
+	'Number': ParamNumber,
+	'RawMessage': ParamRawMessage
 }
 
 var mcCommands = {

@@ -158,15 +158,35 @@ function Command ( )
 Command.prototype.updateLoop = function ( )
 {
 	var nextHasValue = false;
+	var param;
+	
 	for ( var i = this.paramsOrdered.length - 1; i >= 0; i-- )
 	{
-		if ( !nextHasValue && this.paramsOrdered[i + 1] && ( this.paramsOrdered[i + 1].container.style.display === '' || this.paramsOrdered[i + 1].ignoreIfHidden === false ) )
-			nextHasValue = ( this.paramsOrdered[i + 1].value.toString ( ) !== '' );
+		param = this.paramsOrdered[i]
 
-		if ( this.paramsOrdered[i].container.style.display === '' || this.paramsOrdered[i].ignoreIfHidden === false )
-			this.paramsOrdered[i].value.update ( nextHasValue );
-		else if ( this.paramsOrdered[i].value.setError )
-			this.paramsOrdered[i].value.setError ( false );
+		if ( param.group !== undefined && param.groupIndex !== undefined && !this.groupRadioSelected ( param.group, param.groupIndex ) )
+		{
+			if ( param.value.setError )
+				param.value.setError ( false );
+			continue;
+		}
+			
+		//if ( !nextHasValue && this.paramsOrdered[i + 1] && ( this.paramsOrdered[i + 1].container.style.display === '' || this.paramsOrdered[i + 1].ignoreIfHidden === false ) )
+		//	nextHasValue = ( this.paramsOrdered[i + 1].value.toString ( ) !== '' );
+
+		if ( param.container.style.display === '' || param.ignoreIfHidden === false )
+			param.value.update ( nextHasValue );
+		else if ( param.value.setError )
+			param.value.setError ( false );
+		
+		if ( !param.ignoreValue && ( param.container.style.display === '' || param.ignoreIfHidden === false ))
+		{
+			value = param.value.toString ( nextHasValue );
+			if ( value !== '' )
+			{
+				nextHasValue = true;
+			}
+		}
 	}
 
 	/*for ( var param in this.params )
@@ -183,18 +203,26 @@ Command.prototype.update = function ( )
 Command.prototype.toString = function ( )
 {
 	var values = [];
+	var param;
 
 	var nextHasValue = false;
 	for ( var i = this.paramsOrdered.length - 1; i >= 0; i-- )
 	{
-		if ( !nextHasValue && this.paramsOrdered[i + 1] && !this.paramsOrdered[i + 1].ignoreValue && ( this.paramsOrdered[i + 1].container.style.display === '' || this.paramsOrdered[i + 1].ignoreIfHidden === false ) )
-			nextHasValue = ( this.paramsOrdered[i + 1].value.toString ( ) !== '' );
+		//if ( !nextHasValue && this.paramsOrdered[i + 1] && !this.paramsOrdered[i + 1].ignoreValue && ( this.paramsOrdered[i + 1].container.style.display === '' || this.paramsOrdered[i + 1].ignoreIfHidden === false ) )
+		//	nextHasValue = ( this.paramsOrdered[i + 1].value.toString ( ) !== '' );
+		param = this.paramsOrdered[i]
 
-		if ( !this.paramsOrdered[i].ignoreValue && ( this.paramsOrdered[i].container.style.display === '' || this.paramsOrdered[i].ignoreIfHidden === false ))
+		if ( param.group !== undefined && param.groupIndex !== undefined && !this.groupRadioSelected ( param.group, param.groupIndex ) )
+			continue;
+		
+		if ( !param.ignoreValue && ( param.container.style.display === '' || param.ignoreIfHidden === false ))
 		{
-			value = this.paramsOrdered[i].value.toString ( nextHasValue );
+			value = param.value.toString ( nextHasValue );
 			if ( value !== '' )
+			{
+				nextHasValue = true;
 				values.unshift ( value );
+			}
 		}
 	}
 
@@ -206,6 +234,61 @@ Command.prototype.toString = function ( )
 		output += ' ' + values;
 
 	return output;
+}
+
+Command.prototype.groupRadioSelected = function ( name, index )
+{
+	var param;
+	
+	for ( var i = 0; i < this.paramsOrdered.length; i++ )
+	{
+		param = this.paramsOrdered[i];
+		if ( param.group === name && param.groupIndex === index && param.groupRadiobox )
+			return param.groupRadiobox.checked;
+	}
+	
+	return false;
+}
+
+Command.prototype.groupExists = function ( name )
+{
+	var param;
+	
+	for ( var i = 0; i < this.paramsOrdered.length; i++ )
+	{
+		if ( this.paramsOrdered[i].group === name )
+			return true;
+	}
+	
+	return false;
+}
+
+Command.prototype.groupRadioExists = function ( name, index )
+{
+	var param;
+	
+	for ( var i = 0; i < this.paramsOrdered.length; i++ )
+	{
+		param = this.paramsOrdered[i];
+		if ( param.group === name && param.groupIndex === index )
+			return true;
+	}
+	
+	return false;
+}
+
+Command.prototype.groupRadioFirst = function ( name, index )
+{
+	var param;
+	
+	for ( var i = 0; i < this.paramsOrdered.length; i++ )
+	{
+		param = this.paramsOrdered[i];
+		if ( param.group === name && param.groupIndex === index )
+			return param.groupRadiobox;
+	}
+	
+	return null;
 }
 
 Command.prototype.createParam = function ( container, name, Type, from, options )
@@ -223,7 +306,24 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 	row.appendChild ( cell );
 
 	cell = document.createElement ( 'td' );
+	
+	if ( options.group !== undefined && options.groupIndex !== undefined )
+	{
+		var radiobox = document.createElement ( 'input' )
+		radiobox.type = 'radio'
+		radiobox.name = options.group
+		radiobox.index = options.groupIndex
+		radiobox.checked = !this.groupExists ( options.group )
+		radiobox.style.visibility = ( this.groupRadioExists ( options.group, options.groupIndex ) ? 'hidden' : '' )
+		radiobox.addEventListener ( 'change', ( function ( command ) { return function ( e ) { command.onGroupRadioboxChange ( e ) } } ) ( this ) );
+		options.groupRadiobox = this.groupRadioFirst ( options.group, options.groupIndex ) || radiobox
+		cell.appendChild ( radiobox )
+	}
+	
 	var value = new Type ( cell, options.defaultValue, options.optional, from && from[name] && from[name].value, options );
+	
+	cell.addEventListener ( 'click', ( function ( param ) { return function () { param.selectGroup ( ) } } ) ( value ) );
+	
 	row.appendChild ( cell );
 
 	container.appendChild ( row );
@@ -235,9 +335,17 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 		ignoreValue: options.ignoreValue,
 		ignoreIfHidden: options.ignoreIfHidden,
 		optional: options.optional,
-		container: row
+		container: row,
+		group: options.group,
+		groupIndex: options.groupIndex,
+		groupRadiobox: radiobox
 	}
 	this.paramsOrdered.push ( this.params[name] );
+}
+
+Command.prototype.onGroupRadioboxChange = function ( e )
+{
+	updateCommand ( )
 }
 
 function GenericCommand ( container, name, from )
@@ -827,8 +935,8 @@ function CommandTellRaw ( container, from )
 
 	from = from && from.params;
 
-	/*this.createParam ( container, 'player', ParamPlayerSelector, '', true, false, from );
-	this.createParam ( container, 'rawmessage', ParamRawMessage, '', true, false, from );*/
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'rawmessage', ParamRawMessage, from, { isRoot: true } );
 }
 
 CommandTellRaw.prototype = new Command ( );
@@ -920,14 +1028,18 @@ CommandToggleDownFall.prototype = new Command ( );
 
 function CommandTP ( container, from )
 {
-	this.name = 'effect'
+	this.name = 'tp'
 	this.description = '';
 	this.params = {};
 	this.paramsOrdered = [];
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, '', true, false, from );
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'destination player', ParamPlayerSelector, from, { optional: true, group: 'dest', groupIndex: 0 } );
+	this.createParam ( container, 'x', ParamPos, from, { group: 'dest', groupIndex: 1 } );
+	this.createParam ( container, 'y', ParamPos, from, { group: 'dest', groupIndex: 1 } );
+	this.createParam ( container, 'z', ParamPos, from, { group: 'dest', groupIndex: 1 } );
 }
 
 CommandTP.prototype = new Command ( );
@@ -968,6 +1080,18 @@ function Param ( )
 
 Param.prototype = new Command ( );
 
+Param.prototype.selectGroup = function ( )
+{
+	var radio = this.options && this.options.groupRadiobox;
+	
+	if ( !radio || radio.nodeName !== 'INPUT' || radio.type !== 'radio' )
+		return false
+	
+	radio.checked = true;
+	
+	updateCommand ( )
+}
+
 Param.prototype.onValueChange = function ( e )
 {
 	e = e || window.event;
@@ -989,6 +1113,8 @@ Param.prototype.setValue = function ( v )
 	{
 		this.value = v;
 	}
+	
+	this.selectGroup ( );
 }
 
 Param.prototype.toString = function ( needValue )
@@ -1003,6 +1129,9 @@ Param.prototype.toString = function ( needValue )
 
 Param.prototype.setError = function ( error )
 {
+	if ( !this.input )
+		return;
+		
 	if ( error )
 		this.input.className = 'error'
 	else
@@ -1244,6 +1373,35 @@ function ParamBlock ( container, defaultValue, optional, from, options )
 }
 
 ParamBlock.prototype = new Param ( );
+
+function ParamBoolean ( container, defaultValue, optional, from, options )
+{
+	this.optional = optional
+	this.checked = from && from.value || 'false'
+	this.value = this.checked == 'true' ? 'true' : ( optional ? '' : 'false' )
+
+	var input = document.createElement ( 'input' )
+	input.type = 'checkbox'
+	input.checked = this.value == 'true'
+	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onCheckboxChange ( e ) } } ) ( this ) );
+	
+	this.input = input;
+	
+	container.appendChild ( input );
+}
+
+ParamBoolean.prototype = new Param ( );
+
+ParamBoolean.prototype.onCheckboxChange = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+	
+	this.checked = target.checked ? 'true' : 'false'
+	this.value = this.checked == 'true' ? 'true' : ( this.optional ? '' : 'false' )
+
+	updateCommand ( );
+}
 
 function ParamDataTag ( container, defaultValue, optional, from, options )
 {
@@ -1578,10 +1736,11 @@ ParamList.prototype.update = function ( nextHasValue )
 		this.setError ( true );
 }
 
-function ParamPlayerSelector ( container, defaultValue, optional, from )
+function ParamPlayerSelector ( container, defaultValue, optional, from, options )
 {
 	this.player = null;
 	this.optional = optional;
+	this.options = options;
 
 	this.createHTML ( container );
 
@@ -1625,12 +1784,12 @@ ParamPlayerSelector.prototype.createHTML = function ( container )
 	option.appendChild ( document.createTextNode ( '@r' ) );
 	selector.appendChild ( option );
 
-	var options = document.createElement ( 'table' );
-	options.className = 'mc-player-options';
-	container.appendChild ( options );
+	var optionsContainer = document.createElement ( 'table' );
+	optionsContainer.className = 'mc-player-options';
+	container.appendChild ( optionsContainer );
 
 	this.selector = selector;
-	this.options = options;
+	this.optionsContainer = optionsContainer;
 }
 
 ParamPlayerSelector.prototype.onSelectorChange = function ( e )
@@ -1646,15 +1805,17 @@ ParamPlayerSelector.prototype.onSelectorChange = function ( e )
 	var container = target.parentNode;
 
 	this.updatePlayer ( player );
+	
+	this.selectGroup ( )
 
 	updateCommand ( );
 }
 
 ParamPlayerSelector.prototype.updatePlayer = function ( player )
 {
-	var options = this.options;
+	var optionsContainer = this.optionsContainer;
 
-	options.innerHTML = '';
+	optionsContainer.innerHTML = '';
 	
 	if ( !this.optional && player == 'None' )
 		player = 'Username'
@@ -1667,10 +1828,10 @@ ParamPlayerSelector.prototype.updatePlayer = function ( player )
 			this.player = null;
 		break;
 		case 'Username':
-			this.player = new PlayerUsername ( options, false, this.player );
+			this.player = new PlayerUsername ( optionsContainer, false, this.player );
 		break;
 		default:
-			this.player = new PlayerSelector ( options, player, this.optional, this.player );
+			this.player = new PlayerSelector ( optionsContainer, player, this.optional, this.player );
 	}
 }
 
@@ -1744,6 +1905,8 @@ ParamPos.prototype.onCheckChange = function ( e )
 			this.input.max = 255;
 		}
 	}
+	
+	this.selectGroup ( )
 
 	updateCommand ( );
 }
@@ -1833,12 +1996,176 @@ function ParamPotion ( container, defaultValue, optional, from, options )
 
 ParamPotion.prototype = new Param ( );
 
-function ParamRawMessage ( container, defaultValue, optional, from )
+function ParamRawMessage ( container, defaultValue, optional, from, options )
 {
+	this.optional = optional;
+	this.params = {};
+	this.paramsOrdered = [];
+	
+	container.className += ' mc-raw-message';
 
+	var table = document.createElement ( 'table' );
+	container.appendChild ( table );
+	
+	this.createParam ( table, 'text', ParamText, from, { group: 'text', groupIndex: 0 } );
+	this.createParam ( table, 'translate', ParamText, from, { group: 'text', groupIndex: 1 } );
+	this.createParam ( table, 'color', ParamText, from, { optional: true } );
+	this.createParam ( table, 'bold', ParamBoolean, from, { optional: true } );
+	this.createParam ( table, 'underlined', ParamBoolean, from, { optional: true } );
+	this.createParam ( table, 'italic', ParamBoolean, from, { optional: true } );
+	this.createParam ( table, 'strikethrough', ParamBoolean, from, { optional: true } );
+	this.createParam ( table, 'obfusated', ParamBoolean, from, { optional: true } );
+	if ( options && options.isRoot )
+		this.createParam ( table, 'extra', ParamRawMessageExtras, from, { optional: true } );
 }
 
 ParamRawMessage.prototype = new Param ( );
+
+ParamRawMessage.prototype.update = function ( )
+{
+	for ( var i = 0; i < this.paramsOrdered.length; i++ )
+	{
+		param = this.paramsOrdered[i]
+
+		if ( param.group !== undefined && param.groupIndex !== undefined && !this.groupRadioSelected ( param.group, param.groupIndex ) )
+		{
+			if ( param.value.setError )
+				param.value.setError ( false );
+			continue;
+		}
+		
+		param.value.update ( );
+	}
+}
+
+ParamRawMessage.prototype.toString = function ( previous )
+{
+	var items = [];
+	
+	for ( var i = 0; i < this.paramsOrdered.length; i++ )
+	{
+		var param = this.paramsOrdered[i];
+
+		if ( param.group !== undefined && param.groupIndex !== undefined && !this.groupRadioSelected ( param.group, param.groupIndex ) )
+			continue;
+		
+		var name = param.name;
+		var value = param.value.toString ( ( name == 'extra' ? this.params : null ) );
+		
+		if ( previous instanceof Object )
+		{	
+			if ( name == 'bold' )
+			{
+				console.log ( param.value.checked );
+				console.log ( previous[name].value.checked );
+			}
+				
+			if ( param.value instanceof ParamBoolean && previous[name] )
+			{
+				if ( param.value.checked == previous[name].value.checked )
+					value = ''
+				else if ( value == '' )
+					value = 'false'
+			}
+			else if ( name == 'color' )
+			{
+				if ( value == previous[name].value )
+					value = ''
+			}
+		}
+		
+		if ( value != '' )
+			items.push ( name + ':' + value );
+	}
+	
+	items = items.join(',')
+	
+	return items == '' ? '' : '{' + items + '}'
+}
+
+function ParamRawMessageExtras ( container, defaultValue, optional, from, options )
+{
+	this.optional = optional;
+	this.items = [];
+
+	var table = document.createElement ( 'table' );
+	container.appendChild ( table );
+	
+	this.table = table;
+
+	var button = document.createElement ( 'button' );
+	button.appendChild ( document.createTextNode ( 'Add Extra' ) );
+	button.addEventListener ( 'click', ( function ( param ) { return function ( e ) { param.onAddButtonClick ( e ) } } ) ( this ) );
+	container.appendChild ( button );
+
+	//this.addItem ( );
+}
+
+ParamRawMessageExtras.prototype = new Param ( );
+
+ParamRawMessageExtras.prototype.addItem = function ( )
+{
+	var row = document.createElement ( 'tr' );
+	
+	var cell = document.createElement ( 'td' );
+	row.appendChild ( cell );
+
+	var remove = document.createElement ( 'span' );
+	remove.appendChild ( document.createTextNode ( 'Remove' ) );
+	remove.addEventListener ( 'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, row ) );
+	cell.appendChild ( remove );
+
+	this.table.appendChild ( row );
+
+	var value = new ParamRawMessage ( cell, '', true );
+
+	this.items.push ( {
+		value: value,
+		container: row
+	} );
+
+	updateCommand ( );
+}
+
+ParamRawMessageExtras.prototype.onAddButtonClick = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+
+	if ( e.preventDefault )
+		e.preventDefault ( );
+
+	this.addItem ( );
+
+	return false;
+}
+
+ParamRawMessageExtras.prototype.update = function ( )
+{
+	for ( var i = 0; i < this.items.length; i++ )
+	{
+		this.items[i].value.update ( );
+	}
+}
+
+ParamRawMessageExtras.prototype.toString = function ( previous )
+{
+	var items = [];
+	
+	for ( var i = 0; i < this.items.length; i++ )
+	{
+		var param = this.items[i];
+		
+		var value = param.value.toString ( i === 0 ? previous : this.items[i - 1].value.params );
+		
+		if ( value != '' )
+			items.push ( value );
+	}
+	
+	items = items.join(',')
+	
+	return items == '' ? '' : '[' + items + ']'
+}
 
 function ParamScoreboardObjectives ( container, defaultValue, optional, from, options )
 {
@@ -1886,6 +2213,7 @@ function ParamText ( container, defaultValue, optional, from, options )
 {
 	this.value = from && from.value ? from.value : '';
 	this.optional = optional;
+	this.options = options;
 
 	var input = document.createElement ( 'input' );
 	if ( options && options.defaultValue !== undefined )

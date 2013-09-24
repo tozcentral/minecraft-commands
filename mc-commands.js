@@ -677,14 +677,6 @@ CommandGive.prototype = new Command ( );
 
 CommandGive.prototype.update = function ( )
 {
-	if ( this.params['item metadata'].value.value !== '0' )
-	{
-		var itemMetadata = this.params['item metadata'].value.value.split ( ' ' );
-
-		this.params.item.value.setValue ( itemMetadata[0] || '' );
-		this.params.metadata.value.setValue ( itemMetadata[1] || '' );
-	}
-
 	if ( this.params['item metadata'].value.value === '0' )
 	{
 		this.params.item.container.style.display = '';
@@ -692,8 +684,16 @@ CommandGive.prototype.update = function ( )
 	}
 	else
 	{
+		var itemMetadata = this.params['item metadata'].value.value.split ( ' ' );
+
+		this.params.item.value.setValue ( itemMetadata[0] || '' );
 		this.params.item.container.style.display = 'none';
-		this.params.metadata.container.style.display = 'none';
+		
+		if ( itemMetadata[1] !== '*' )
+		{
+			this.params.metadata.value.setValue ( itemMetadata[1] || '' );
+			this.params.metadata.container.style.display = 'none';
+		}
 	}
 
 	this.updateLoop ( );
@@ -1590,6 +1590,8 @@ function ParamItem ( container, defaultValue, optional, from, options )
 {
 	var option;
 	
+	this.options = options;
+	
 	this.optional = optional;
 	var items = {
 		'1 0': 'Stone',
@@ -1721,7 +1723,7 @@ function ParamItem ( container, defaultValue, optional, from, options )
 	for ( var i in items )
 	{
 		option = document.createElement ( 'option' );
-		option.selected = ( items[i] == ( this.value || options.defaultValue ) )
+		option.selected = ( items[i] == ( this.value || defaultValue ) )
 		option.value = i;
 		option.appendChild ( document.createTextNode ( items[i] ) );
 		select.appendChild ( option );
@@ -1738,6 +1740,54 @@ function ParamItem ( container, defaultValue, optional, from, options )
 }
 
 ParamItem.prototype = new Param ( );
+
+function ParamItemTag ( container, defaultValue, optional, from, options )
+{
+	this.options = options;
+	this.params = {};
+	this.paramsOrdered = [];
+	
+	this.optional = optional;
+	this.createParam ( container, 'item metadata', ParamItem, from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item', ParamNumber, from, { ignoreIfHidden: false, min:1 } );
+	this.createParam ( container, 'metadata', ParamNumber, from, { ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
+	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true, type: 'ItemGeneric' } );
+}
+
+ParamItemTag.prototype = new Param ( );
+
+ParamItemTag.prototype.update = function ( )
+{
+	if ( this.params['item metadata'].value.value === '0' )
+	{
+		this.params.item.container.style.display = '';
+		this.params.metadata.container.style.display = '';
+	}
+	else
+	{
+		var itemMetadata = this.params['item metadata'].value.value.split ( ' ' );
+
+		this.params.item.value.setValue ( itemMetadata[0] || '' );
+		this.params.item.container.style.display = 'none';
+		
+		if ( itemMetadata[1] !== '*' )
+		{
+			this.params.metadata.value.setValue ( itemMetadata[1] || '' );
+			this.params.metadata.container.style.display = 'none';
+		}
+	}
+
+	this.updateLoop ( );
+}
+
+ParamItemTag.prototype.toString = function ( )
+{
+	var itemID = this.params.item.value
+	var itemDamage = this.params.metadata.value
+	var tag = this.params.dataTag.value
+	
+	return quote ( '{id:' + itemID + ( itemDamage != '' ? ',Damage:' + itemDamage : '' ) + ( tag != '' ? ',tag:' + tag : '' ) + '}' )
+}
 
 function ParamList ( container, defaultValue, optional, from, options )
 {
@@ -2052,7 +2102,7 @@ function ParamRawMessage ( container, defaultValue, optional, from, options )
 	var table = document.createElement ( 'table' );
 	container.appendChild ( table );
 	
-	this.createParam ( table, 'text', ParamText, from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true } );
+	this.createParam ( table, 'text', ParamText, from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true, special: true } );
 	this.createParam ( table, 'translate', ParamText, from, { group: 'text', groupIndex: 1, groupPrefix: this.groupPrefix, quote: true } );
 	this.createParam ( table, 'color', ParamText, from, { optional: true } );
 	this.createParam ( table, 'bold', ParamBoolean, from, { optional: true } );
@@ -2062,8 +2112,8 @@ function ParamRawMessage ( container, defaultValue, optional, from, options )
 	this.createParam ( table, 'obfuscated', ParamBoolean, from, { optional: true } );
 	if ( options && options.hasEvents )
 	{
-		this.createParam ( table, 'clickEvent', ParamRawMessageEvent, from, { optional: true, items: ['run_command'] } );
-		this.createParam ( table, 'hoverEvent', ParamRawMessageEvent, from, { optional: true, items: ['show_text'] } );
+		this.createParam ( table, 'clickEvent', ParamRawMessageEvent, from, { optional: true, items: ['run_command','suggest_command','open_url'] } );
+		this.createParam ( table, 'hoverEvent', ParamRawMessageEvent, from, { optional: true, items: ['show_text','show_item','show_achievement'] } );
 	}
 	if ( options && options.isRoot )
 		this.createParam ( table, 'extra', ParamRawMessageExtras, from, { optional: true, hasEvents: options && options.hasEvents } );
@@ -2232,10 +2282,20 @@ ParamRawMessageEvent.prototype.updateParam = function ( param )
 			this.param = null
 		break
 		case 'run_command':
+		case 'suggest_command':
 			this.param = new ParamCommandSelector ( optionsContainer, null, false, this.param, { quote: true } );
+		break
+		case 'open_url':
+			this.param = new ParamText ( optionsContainer, null, false, this.param, { quote: true } );
 		break
 		case 'show_text':
 			this.param = new ParamRawMessage ( optionsContainer, null, false, this.param );
+		break
+		case 'show_item':
+			this.param = new ParamItemTag ( optionsContainer, null, false, this.param );
+		break
+		case 'show_achievement':
+			this.param = new ParamAchievement ( optionsContainer, null, false, this.param );
 		break
 	}
 }
@@ -2400,6 +2460,15 @@ function ParamText ( container, defaultValue, optional, from, options )
 	input.value = this.value;
 	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 	container.appendChild ( input );
+	
+	if ( options && options.special )
+	{
+		var span = document.createElement ( 'span' );
+		span.className = 'input-button';
+		span.appendChild ( document.createTextNode ( '§' ) )
+		span.addEventListener ( 'click', ( function ( param ) { return function ( e ) { param.onSpecialClick ( e ) } } ) ( this ) );
+		container.appendChild ( span );
+	}
 
 	this.input = input;
 }
@@ -2412,6 +2481,29 @@ ParamText.prototype.update = function ( nextHasValue )
 
 	if ( required )
 		this.input.className = this.value === '' ? 'error' : '';
+}
+
+ParamText.prototype.onSpecialClick = function ( )
+{
+	var input = this.input;
+
+	input.focus ( );
+
+	var selStart = input.selectionStart;
+	var selStop = input.selectionEnd || selStart;
+    var value = input.value;
+
+	console.log ( selStart );
+	console.log ( selStop );
+	console.log ( value.slice(0, selStart) );
+	console.log ( value.slice(selStop) );
+
+    input.value = value.slice(0, selStart) + '§' + value.slice(selStop);
+
+	input.selectionStart = selStart + 1;
+	input.selectionEnd = selStart + 1;
+
+	input.focus ( );
 }
 
 var ParamSound = ParamText;
@@ -3284,43 +3376,10 @@ var TagRGB = TagShort;
 
 function TagString ( container, structure, optional )
 {
-	this.tag = new ParamText ( container, '', optional, null, {} );
-
-	var span = document.createElement ( 'span' );
-	span.className = 'input-button';
-	span.appendChild ( document.createTextNode ( '§' ) )
-	span.addEventListener ( 'click', ( function ( tag ) { return function ( e ) { tag.onSpecialClick ( e ) } } ) ( this ) );
-	container.appendChild ( span );
+	this.tag = new ParamText ( container, '', optional, null, { special: true } );
 }
 
 TagString.prototype = new Tag ( );
-
-TagString.prototype.onSpecialClick = function ( )
-{
-	var input = this.tag.input;
-
-	input.focus ( );
-
-	var selStart = input.selectionStart;
-	var selStop = input.selectionEnd || selStart;
-    var value = input.value;
-
-	console.log ( selStart );
-	console.log ( selStop );
-	console.log ( value.slice(0, selStart) );
-	console.log ( value.slice(selStop) );
-
-    input.value = value.slice(0, selStart) + '§' + value.slice(selStop);
-
-	input.selectionStart = selStart + 1;
-	input.selectionEnd = selStart + 1;
-
-	input.focus ( );/**/
-	//var sel = document.selection.createRange();
-	//sel.text = '§';
-	//replaceSelectedText(this.tag.input, '§');
-	//this.tag.input.focus ( );
-}
 
 TagString.prototype.toString = function ( )
 {

@@ -1655,6 +1655,9 @@ ParamPlayerSelector.prototype.updatePlayer = function ( player )
 	var options = this.options;
 
 	options.innerHTML = '';
+	
+	if ( !this.optional && player == 'None' )
+		player = 'Username'
 
 	this.selector.value = player;
 

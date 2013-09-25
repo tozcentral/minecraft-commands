@@ -25,15 +25,6 @@ function onRemoveClick ( e, parent )
 
 	var i;
 
-	/*var table = target.parentNode;
-	while ( table && table.className != 'mc-tag-options' )
-	{
-		table = table.parentNode;
-	}
-
-	if ( !table )
-		return false;*/
-
 	if ( this.tags )
 	{
 		for ( i = 0; i < this.tags.length; i++ )
@@ -137,10 +128,6 @@ CommandSelector.prototype.createHTML = function ( container )
 	selector.addEventListener ( 'change', ( function ( commandSelector ) { return function ( e ) { commandSelector.onSelectorChange ( e ) } } ) ( this ) );
 	container.appendChild ( selector );
 
-	/*var option = document.createElement ( 'option' );
-	option.appendChild ( document.createTextNode ( 'Select Command' ) );
-	selector.appendChild ( option );*/
-
 	for ( var command in commands )
 	{
 		var option = document.createElement ( 'option' );
@@ -198,11 +185,6 @@ Command.prototype.updateLoop = function ( )
 			}
 		}
 	}
-
-	/*for ( var param in this.params )
-	{
-		this.params[param].value.update ( );
-	}*/
 }
 
 Command.prototype.update = function ( )
@@ -435,35 +417,7 @@ CommandClear.prototype.update = function ( )
 
 	this.updateLoop ( );
 }
-/*
-CommandClear.prototype.toString = function ( )
-{
-	var output = '/' + this.name;
 
-	var value = ' ' + this.params.player.value;
-	if ( value != ' ' )
-		output += value;
-
-	/*if ( this.params['item metadata'].value.value === '' )
-	{* /
-		var value = ' ' + this.params.item.value;
-		if ( value != ' ' )
-			output += value;
-
-		var value = ' ' + this.params.metadata.value;
-		if ( value != ' ' )
-			output += value;
-	/*}
-	else
-	{
-		var value = ' ' + this.params['item metadata'].value;
-		if ( value != ' ' )
-			output += value;
-	}* /
-
-	return output;
-}
-*/
 function CommandDebug ( container, from )
 {
 	this.name = 'debug'
@@ -622,11 +576,6 @@ CommandEnchant.prototype.update = function ( )
 	}
 
 	this.updateLoop ( );
-
-	/*for ( var param in this.params )
-	{
-		this.params[param].value.update ( );
-	}*/
 }
 
 function CommandGamemode ( container, from )
@@ -701,57 +650,6 @@ CommandGive.prototype.update = function ( )
 
 	this.updateLoop ( );
 }
-/*
-CommandGive.prototype.toString = function ( )
-{
-	var output = '/' + this.name;
-
-	var value = ' ' + this.params.player.value;
-	if ( value != ' ' )
-		output += value;
-
-	var dataTag = this.params['dataTag'].value.toString ( );
-
-	/*if ( this.params['item metadata'].value.value === '' )
-	{* /
-		var value = ' ' + this.params.item.value;
-		if ( value != ' ' )
-			output += value;
-
-		var value = ' ' + this.params['amount'].value;
-		if ( value != ' ' )
-			output += value;
-
-		var value = ' ' + this.params.metadata.value;
-		if ( value != ' ' )
-			output += value;
-	/*}
-	else
-	{
-		var itemMetadata = this.params['item metadata'].value.value;
-
-		var value = ' ' + itemMetadata[0];
-		if ( value != ' ' )
-			output += value;
-
-		var value = ' ' + this.params['amount'].value;
-		if ( value != ' ' )
-			output += value;
-
-		if ( ( parseInt ( itemMetadata[1] ) || 0 ) != 0 || dataTag )
-		{
-			var value = ' ' + ( itemMetadata[1] || 0 );
-			if ( value != ' ' )
-				output += value;
-		}
-	}* /
-
-	var value = ' ' + dataTag;
-	if ( value != ' ' )
-		output += value;
-
-	return output;
-}*/
 
 function CommandMe ( container, from )
 {
@@ -1279,117 +1177,6 @@ function ParamBlock ( container, defaultValue, optional, from, options )
 	var option, block;
 	
 	this.optional = optional;
-	/*var blocks = {
-		'minecraft:stone 0': 'Stone',
-		'minecraft:grass 0': 'Grass Block',
-		'minecraft:dirt 0': 'Dirt',
-		'minecraft:dirt 2': 'Podzol',
-		'minecraft:cobblestone 0': 'Cobblestone',
-		'minecraft:planks 0': 'Oak Wood Planks',
-		'minecraft:planks 1': 'Spruce Wood Planks',
-		'minecraft:planks 2': 'Birch Wood Planks',
-		'minecraft:planks 3': 'Jungle Wood Planks',
-		'minecraft:sapling 0': 'Oak Sapling',
-		'minecraft:sapling 1': 'Spruce Sapling',
-		'minecraft:sapling 2': 'Birch Sapling',
-		'minecraft:sapling 3': 'Jungle Sapling',
-		'minecraft:bedrock 0': 'Bedrock',
-		'minecraft:water 0': 'Water',
-		'minecraft:lava 0': 'Lava',
-		'minecraft:sand 0': 'Sand'
-		/*'13 0': 'Gravel',
-		'14 0': 'Gold Ore',
-		'15 0': 'Iron Ore',
-		'16 0': 'Coal Ore',
-		'17 0': 'Oak Wood',
-		'17 1': 'Spruce Wood',
-		'17 2': 'Birch Wood',
-		'17 3': 'Jungle Wood',
-		'18 0': 'Oak Leaves',
-		'18 1': 'Spruce Leaves',
-		'18 2': 'Birch Leaves',
-		'18 3': 'Jungle Leaves',
-		'19 0': 'Sponge',
-		'20 0': 'Glass Block',
-		'21 0': 'Lapis Lazuli Ore',
-		'22 0': 'Lapis Lazuli Block',
-		'23 0': 'Dispenser',
-		'24 0': 'Sandstone',
-		'24 1': 'Chiselled Sandstone',
-		'24 2': 'Smooth Sandstone',
-		'25 0': 'Note Block',
-		//'26 0': 'Block',
-		'27 0': 'Powered Rail',
-		'28 0': 'Detector Rail',
-		'29 0': 'Sticky Piston',
-		'30 0': 'Cobweb',
-		'31 0': 'Shrub',
-		'31 1': 'Grass',
-		'31 2': 'Fern',
-		'32 0': 'Dead Bush',
-		'33 0': 'Piston',
-		//'34 0': 'Block',
-		'35 0': 'Wool',
-		'35 1': 'Orange Wool',
-		'35 2': 'Magenta Wool',
-		'35 3': 'Light Blue Wool',
-		'35 4': 'Yellow Wool',
-		'35 5': 'Light Green Wool',
-		'35 6': 'Pink Wool',
-		'35 7': 'Grey Wool',
-		'35 8': 'Light Grey Wool',
-		'35 9': 'Cyan Wool',
-		'35 10': 'Purple Wool',
-		'35 11': 'Blue Wool',
-		'35 12': 'Brown Wool',
-		'35 13': 'Green Wool',
-		'35 14': 'Red Wool',
-		'35 15': 'Black Wool',
-		//'36 0': 'Block',
-		'37 0': 'Dandelion',
-		'38 0': 'Poppy',
-		'38 1': 'Blue Orchid',
-		'38 2': 'Allium',
-		'38 3': 'Azure Bluet',
-		'38 4': 'Red Tulip',
-		'38 5': 'Orange Tulip',
-		'38 6': 'White Tulip',
-		'38 7': 'Pink Tulip',
-		'38 8': 'Oxeye Daisy',
-		'39 0': 'Brown Mushroom',
-		'40 0': 'Red Mushroom',
-		'41 0': 'Gold Block',
-		'42 0': 'Iron Block',
-		'43 0': 'Stone Double Slab',
-		'43 1': 'Sandstone Double Slab',
-		'43 2': 'Fireproof Wooden Double Slab',
-		'43 3': 'Cobblestone Double Slab',
-		'43 4': 'Brick Double Slab',
-		'43 5': 'Stone Brick Double Slab',
-		'43 6': 'Nether Brick Double Slab',
-		'43 7': 'Quartz Double Slab',
-		'43 8': 'Clean Stone Double Slab',
-		'43 9': 'Clean Sandstone Double Slab',
-		'43 10': 'Clean Fireproof Wooden Double Slab',
-		'43 11': 'Clean Cobblestone Double Slab',
-		'43 12': 'Clean Brick Double Slab',
-		'43 13': 'Clean Stone Brick Double Slab',
-		'43 14': 'Clean Nether Brick Double Slab',
-		'43 15': 'Clean Quartz Double Slab',
-		'44 0': 'Stone Slab',
-		'44 1': 'Sandstone Slab',
-		'44 2': 'Fireproof Wooden Slab',
-		'44 3': 'Cobblestone Slab',
-		'44 4': 'Brick Slab',
-		'44 5': 'Stone Brick Slab',
-		'44 6': 'Nether Brick Slab',
-		'44 7': 'Quartz Slab',
-		'45 0': 'Bricks',
-		'46 0': 'TNT',
-		'47 0': 'Bookshelf',
-		'48 0': 'Mossy Cobblestone',
-		'49 0': 'Obsidian',* /
-	};*/
 
 	this.value = from && from.value;
 
@@ -1631,140 +1418,6 @@ function ParamItem ( container, defaultValue, optional, from, options )
 	this.options = options;
 	
 	this.optional = optional;
-	/*var items = {
-		'1 0': 'Stone',
-		'2 0': 'Grass Block',
-		'3 0': 'Dirt',
-		'3 2': 'Podzol',
-		'4 0': 'Cobblestone',
-		'5 0': 'Oak Wood Planks',
-		'5 1': 'Spruce Wood Planks',
-		'5 2': 'Birch Wood Planks',
-		'5 3': 'Jungle Wood Planks',
-		'6 0': 'Oak Sapling',
-		'6 1': 'Spruce Sapling',
-		'6 2': 'Birch Sapling',
-		'6 3': 'Jungle Sapling',
-		'7 0': 'Bedrock',
-		'8 0': 'Water',
-		'9 0': 'Water',
-		'10 0': 'Lava',
-		'11 0': 'Lava',
-		'12 0': 'Sand',
-		'13 0': 'Gravel',
-		'14 0': 'Gold Ore',
-		'15 0': 'Iron Ore',
-		'16 0': 'Coal Ore',
-		'17 0': 'Oak Wood',
-		'17 1': 'Spruce Wood',
-		'17 2': 'Birch Wood',
-		'17 3': 'Jungle Wood',
-		'18 0': 'Oak Leaves',
-		'18 1': 'Spruce Leaves',
-		'18 2': 'Birch Leaves',
-		'18 3': 'Jungle Leaves',
-		'19 0': 'Sponge',
-		'20 0': 'Glass Block',
-		'21 0': 'Lapis Lazuli Ore',
-		'22 0': 'Lapis Lazuli Block',
-		'23 0': 'Dispenser',
-		'24 0': 'Sandstone',
-		'24 1': 'Chiselled Sandstone',
-		'24 2': 'Smooth Sandstone',
-		'25 0': 'Note Block',
-		//'26 0': 'Block',
-		'27 0': 'Powered Rail',
-		'28 0': 'Detector Rail',
-		'29 0': 'Sticky Piston',
-		'30 0': 'Cobweb',
-		'31 0': 'Shrub',
-		'31 1': 'Grass',
-		'31 2': 'Fern',
-		'32 0': 'Dead Bush',
-		'33 0': 'Piston',
-		//'34 0': 'Block',
-		'35 0': 'Wool',
-		'35 1': 'Orange Wool',
-		'35 2': 'Magenta Wool',
-		'35 3': 'Light Blue Wool',
-		'35 4': 'Yellow Wool',
-		'35 5': 'Light Green Wool',
-		'35 6': 'Pink Wool',
-		'35 7': 'Grey Wool',
-		'35 8': 'Light Grey Wool',
-		'35 9': 'Cyan Wool',
-		'35 10': 'Purple Wool',
-		'35 11': 'Blue Wool',
-		'35 12': 'Brown Wool',
-		'35 13': 'Green Wool',
-		'35 14': 'Red Wool',
-		'35 15': 'Black Wool',
-		//'36 0': 'Block',
-		'37 0': 'Dandelion',
-		'38 0': 'Poppy',
-		'38 1': 'Blue Orchid',
-		'38 2': 'Allium',
-		'38 3': 'Azure Bluet',
-		'38 4': 'Red Tulip',
-		'38 5': 'Orange Tulip',
-		'38 6': 'White Tulip',
-		'38 7': 'Pink Tulip',
-		'38 8': 'Oxeye Daisy',
-		'39 0': 'Brown Mushroom',
-		'40 0': 'Red Mushroom',
-		'41 0': 'Gold Block',
-		'42 0': 'Iron Block',
-		'43 0': 'Stone Double Slab',
-		'43 1': 'Sandstone Double Slab',
-		'43 2': 'Fireproof Wooden Double Slab',
-		'43 3': 'Cobblestone Double Slab',
-		'43 4': 'Brick Double Slab',
-		'43 5': 'Stone Brick Double Slab',
-		'43 6': 'Nether Brick Double Slab',
-		'43 7': 'Quartz Double Slab',
-		'43 8': 'Clean Stone Double Slab',
-		'43 9': 'Clean Sandstone Double Slab',
-		'43 10': 'Clean Fireproof Wooden Double Slab',
-		'43 11': 'Clean Cobblestone Double Slab',
-		'43 12': 'Clean Brick Double Slab',
-		'43 13': 'Clean Stone Brick Double Slab',
-		'43 14': 'Clean Nether Brick Double Slab',
-		'43 15': 'Clean Quartz Double Slab',
-		'44 0': 'Stone Slab',
-		'44 1': 'Sandstone Slab',
-		'44 2': 'Fireproof Wooden Slab',
-		'44 3': 'Cobblestone Slab',
-		'44 4': 'Brick Slab',
-		'44 5': 'Stone Brick Slab',
-		'44 6': 'Nether Brick Slab',
-		'44 7': 'Quartz Slab',
-		'45 0': 'Bricks',
-		'46 0': 'TNT',
-		'47 0': 'Bookshelf',
-		'48 0': 'Mossy Cobblestone',
-		'49 0': 'Obsidian',
-		'50 0': 'Torch',
-		'51 0': 'Fire',
-		'52 0': 'Monster Spawner',
-		'53 0': 'Oak Wood Stairs',
-		'54 0': 'Chest',
-		//'55 0': 'Block',
-		'56 0': 'Diamond Ore',
-		'57 0': 'Diamond Block',
-		'58 0': 'Crafting Table',
-		//'59 0': 'Block',
-		'60 0': 'Farmland',
-		'61 0': 'Furnace',
-		'62 0': 'Lit Furnace',
-		//'63 0': 'Block',
-		//'64 0': 'Block',
-		'65 0': 'Ladder',
-		'66 0': 'Rail',
-		'67 0': 'Stone Stairs',
-		//'68 0': 'Block',
-		'69 0': 'Lever',
-		'70 0': 'Block'
-	};*/
 
 	this.value = from && from.value;
 
@@ -3001,21 +2654,6 @@ Tag.prototype.createTable = function ( container, remove )
 	var table = document.createElement ( 'table' );
 	table.className = 'mc-tag-options';
 	container.appendChild ( table );
-
-	/*if ( remove )
-	{
-		var row = document.createElement ( 'tr' );
-
-		var cell = document.createElement ( 'th' );
-		row.appendChild ( cell );
-
-		var cell = document.createElement ( 'td' );
-		cell.appendChild ( document.createTextNode ( 'Remove' ) );
-		cell.addEventListener ( 'click', ( function ( tag ) { return function ( e ) { tag.onRemoveClick ( e ) } } ) ( this ) );
-		row.appendChild ( cell );
-
-		table.appendChild ( row );
-	}*/
 
 	return table;
 }

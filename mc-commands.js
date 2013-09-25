@@ -152,6 +152,14 @@ function Command ( )
 {
 }
 
+Command.prototype.init = function ( name, description )
+{
+	this.name = name
+	this.description = description
+	this.params = {};
+	this.paramsOrdered = [];
+}
+
 Command.prototype.updateLoop = function ( )
 {
 	var nextHasValue = false;
@@ -313,14 +321,22 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 	}
 	
 	var value = new Type ( cell, options.defaultValue, options.optional, from && from[name] && from[name].value, options );
+
+	if ( options && options.remove )
+	{
+		var span = document.createElement ( 'span' );
+		span.appendChild ( document.createTextNode ( 'Remove' ) );
+		span.addEventListener ( 'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, row ) );
+		cell.appendChild ( span );
+	}
 	
 	cell.addEventListener ( 'click', ( function ( param ) { return function () { param.selectGroup ( ) } } ) ( value ) );
 	
 	row.appendChild ( cell );
 
 	container.appendChild ( row );
-
-	this.params[name] = {
+	
+	var param = {
 		name: name,
 		value: value,
 		defaultValue: options.defaultValue,
@@ -331,8 +347,12 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 		group: options.group,
 		groupIndex: options.groupIndex,
 		groupRadiobox: options.groupRadiobox
-	}
-	this.paramsOrdered.push ( this.params[name] );
+	};
+
+	if ( this.params[name] !== undefined )
+		this.params[name] = param
+		
+	this.paramsOrdered.push ( param );
 }
 
 Command.prototype.onGroupRadioboxChange = function ( e )
@@ -804,6 +824,7 @@ function CommandSpreadPlayers ( container, from )
 	this.description = '';
 	this.params = {};
 	this.paramsOrdered = [];
+	this.container = container;
 
 	from = from && from.params;
 
@@ -812,10 +833,54 @@ function CommandSpreadPlayers ( container, from )
 	this.createParam ( container, 'spreadDistance', ParamNumber, from, {isFloat:true} );
 	this.createParam ( container, 'maxRange', ParamNumber, from );
 	this.createParam ( container, 'respectTeams', ParamList, from, { items: ['true','false'] } );
-	//this.createParam ( container, 'player', PlayerParamList, from );
+	this.createParam ( container, 'player', ParamPlayerSelector, from );
+
+	var button = document.createElement ( 'button' );
+	button.appendChild ( document.createTextNode ( 'Add Player' ) );
+	button.addEventListener ( 'click', ( function ( command ) { return function ( e ) { command.onAddButtonClick ( e ) } } ) ( this ) );
+	container.appendChild ( button );
 }
 
 CommandSpreadPlayers.prototype = new Command ( );
+
+CommandSpreadPlayers.prototype.onAddButtonClick = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+
+	if ( e.preventDefault )
+		e.preventDefault ( );
+
+	this.addItem ( );
+
+	return false;
+}
+
+CommandSpreadPlayers.prototype.addItem = function ( )
+{
+	/*var row = document.createElement ( 'tr' );
+	
+	var cell = document.createElement ( 'td' );
+	row.appendChild ( cell );
+
+	var remove = document.createElement ( 'span' );
+	remove.appendChild ( document.createTextNode ( 'Remove' ) );
+	remove.addEventListener ( 'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, row ) );
+	cell.appendChild ( remove );
+
+	this.table.appendChild ( row );
+
+	var value = new ParamRawMessage ( cell, '', true, null, { hasEvents: this.options && this.options.hasEvents } );
+
+	this.items.push ( {
+		value: value,
+		container: row
+	} );
+
+	updateCommand ( );*/
+	
+	this.createParam ( this.container, 'player', ParamPlayerSelector, null, { remove: true } );
+}
 
 function CommandSummon ( container, from )
 {

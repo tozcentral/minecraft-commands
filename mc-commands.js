@@ -180,7 +180,7 @@ Command.prototype.updateLoop = function ( )
 		//	nextHasValue = ( this.paramsOrdered[i + 1].value.toString ( ) !== '' );
 
 		if ( param.container.style.display === '' || param.ignoreIfHidden === false )
-			param.value.update ( nextHasValue );
+			param.value.update ( param.neverRequireValue ? false : nextHasValue );
 		else if ( param.value.setError )
 			param.value.setError ( false );
 		
@@ -217,7 +217,7 @@ Command.prototype.toString = function ( )
 		
 		if ( !param.ignoreValue && ( param.container.style.display === '' || param.ignoreIfHidden === false ))
 		{
-			value = param.value.toString ( nextHasValue );
+			value = param.value.toString ( param.neverRequireValue ? false : nextHasValue );
 			if ( value !== '' )
 			{
 				nextHasValue = true;
@@ -294,10 +294,13 @@ Command.prototype.groupRadioFirst = function ( name, index )
 Command.prototype.createParam = function ( container, name, Type, from, options )
 {
 	options = options || {};
+	if ( options.completelyOptional )
+		options.optional = options.neverRequireValue = true
 	options.defaultValue = options.defaultValue === undefined ? undefined : options.defaultValue
 	options.ignoreValue = options.ignoreValue === undefined ? false : options.ignoreValue
 	options.ignoreIfHidden = options.ignoreIfHidden === undefined ? true : options.ignoreIfHidden
 	options.optional = options.optional === undefined ? false : options.optional
+	options.neverRequireValue = options.neverRequireValue === undefined ? false : options.neverRequireValue
 
 	var row = document.createElement ( 'tr' );
 
@@ -343,6 +346,7 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 		ignoreValue: options.ignoreValue,
 		ignoreIfHidden: options.ignoreIfHidden,
 		optional: options.optional,
+		neverRequireValue: options.neverRequireValue,
 		container: row,
 		group: options.group,
 		groupIndex: options.groupIndex,
@@ -1041,8 +1045,8 @@ function CommandTP ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'destination player', ParamPlayerSelector, from, { optional: true, group: 'dest', groupIndex: 0, groupPrefix: this.groupPrefix } );
+	this.createParam ( container, 'player', ParamPlayerSelector, from, { completelyOptional: true } );
+	this.createParam ( container, 'destination player', ParamPlayerSelector, from, { group: 'dest', groupIndex: 0, groupPrefix: this.groupPrefix } );
 	this.createParam ( container, 'x', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
 	this.createParam ( container, 'y', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
 	this.createParam ( container, 'z', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );

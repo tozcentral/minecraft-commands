@@ -349,7 +349,7 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 		groupRadiobox: options.groupRadiobox
 	};
 
-	if ( this.params[name] !== undefined )
+	if ( this.params[name] == undefined )
 		this.params[name] = param
 		
 	this.paramsOrdered.push ( param );
@@ -1463,7 +1463,7 @@ function ParamEnchantment ( container, defaultValue, optional, from, options )
 	for ( var i in enchantments )
 	{
 		option = document.createElement ( 'option' );
-		option.selected = ( enchantments[i] == ( this.value || options.defaultValue ) )
+		option.selected = ( enchantments[i] == ( this.value || defaultValue ) )
 		option.value = i;
 		option.appendChild ( document.createTextNode ( enchantments[i] ) );
 		select.appendChild ( option );

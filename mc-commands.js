@@ -1021,6 +1021,22 @@ CommandTestForBlock.prototype.update = function ( )
 		this.params.tilename.container.style.display = 'none';
 		this.params.datavalue.container.style.display = 'none';
 	}
+	
+	var tilename = this.params.tilename.value.value;
+	var block;
+	
+	for ( var i = 0; i < blocks.length; i++ )
+	{
+		block = blocks[i];
+		
+		if ( block.id == tilename || block.tilename == tilename )
+		{
+			var tag = block.tag || 'BlockGeneric'
+			if ( tag != this.params.dataTag.value.type )
+				this.params.dataTag.value.updateType ( tag )
+			break
+		}
+	}
 
 	this.updateLoop ( );
 }
@@ -1474,11 +1490,9 @@ function ParamDataTag ( container, defaultValue, optional, from, options )
 	this.createHTML ( container, ( options && options.selector ) || false );
 
 	this.tag = from && from.tag;
+	this.type = ( from && from.type ) || ( this.selector && this.selector.value ) || ( options && options.type );
 
-	if ( this.selector )
-		this.updateType ( this.selector.value );
-	else if ( options && options.type )
-		this.updateType ( options.type );
+	this.updateType ( this.type );
 }
 
 ParamDataTag.prototype = new Param ( );
@@ -2958,7 +2972,7 @@ function Tag ( )
 {
 }
 
-Tag.prototype.createTag = function ( container, name, type, children, optional )
+Tag.prototype.createTag = function ( container, name, type, children, optional, from )
 {
 	var row = document.createElement ( 'tr' );
 
@@ -2968,7 +2982,7 @@ Tag.prototype.createTag = function ( container, name, type, children, optional )
 
 	var cell = document.createElement ( 'td' );
 	console.log ( 'Tag'+type );
-	var value = new tags[type] ( cell, children, optional );
+	var value = new tags[type] ( cell, children, optional, from );
 	row.appendChild ( cell );
 
 	container.appendChild ( row );
@@ -3261,7 +3275,7 @@ function TagInventory ( container, from )
 {
 	var structure = (new InventoryStructure ( )).structure;
 
-	this.tag = new TagCompound ( container, structure, true, from );
+	this.tag = new TagCompound ( container, structure, true, from && from.tag );
 }
 
 TagInventory.prototype = new Tag ( );
@@ -3270,7 +3284,7 @@ function TagBlockGeneric ( container, from )
 {
 	var structure = (new BlockGenericStructure ( )).structure;
 
-	this.tag = new TagCompound ( container, structure, true, from );
+	this.tag = new TagCompound ( container, structure, true, from && from.tag );
 }
 
 TagBlockGeneric.prototype = new Tag ( );
@@ -3279,7 +3293,7 @@ function TagItemGeneric ( container, from )
 {
 	var structure = (new ItemGenericStructure ( )).structure;
 
-	this.tag = new TagCompound ( container, structure, true, from );
+	this.tag = new TagCompound ( container, structure, true, from && from.tag );
 }
 
 TagItemGeneric.prototype = new Tag ( );
@@ -3288,7 +3302,7 @@ function TagItemBookAndQuill ( container, from )
 {
 	var structure = (new ItemBookAndQuillStructure ( )).structure;
 
-	this.tag = new TagCompound ( container, structure, true, from );
+	this.tag = new TagCompound ( container, structure, true, from && from.tag );
 }
 
 TagItemBookAndQuill.prototype = new Tag ( );
@@ -3297,7 +3311,7 @@ function TagItemWrittenBook ( container, from )
 {
 	var structure = (new ItemWrittenBookStructure ( )).structure;
 
-	this.tag = new TagCompound ( container, structure, true, from );
+	this.tag = new TagCompound ( container, structure, true, from && from.tag );
 }
 
 TagItemWrittenBook.prototype = new Tag ( );
@@ -3306,7 +3320,7 @@ function TagItemColourable ( container, from )
 {
 	var structure = (new ItemColourableStructure ( )).structure;
 
-	this.tag = new TagCompound ( container, structure, true, from );
+	this.tag = new TagCompound ( container, structure, true, from && from.tag );
 }
 
 TagItemColourable.prototype = new Tag ( );
@@ -3319,9 +3333,9 @@ function TagCompound ( container, structure, optional, from )
 	{
 		var tag = structure[name];
 		if ( typeof tag == 'string' )
-			this.createTag ( this.table, name, tag, null, true, from && from.tags && from.tags[name] || null );
+			this.createTag ( this.table, name, tag, null, true, from && from.tags && from.tags[name].value || null );
 		else
-			this.createTag ( this.table, name, tag.type, tag.children || null, tag.optional || true, from && from.tags && from.tags[name] || null );
+			this.createTag ( this.table, name, tag.type, tag.children || null, tag.optional || true, from && from.tags && from.tags[name].value || null );
 	}
 
 	var button = document.createElement ( 'button' );
@@ -3389,7 +3403,7 @@ TagCompound.prototype.addItem = function ( )
 	updateCommand ( );
 }
 
-function TagList ( container, structure, from, options )
+function TagList ( container, structure, optional, from )
 {
 	this.type = structure.type || structure;
 	this.children = structure.children || null;
@@ -3404,12 +3418,20 @@ function TagList ( container, structure, from, options )
 	button.addEventListener ( 'click', ( function ( tagList ) { return function ( e ) { tagList.onAddButtonClick ( e ) } } ) ( this ) );
 	container.appendChild ( button );
 
+	if ( from && from.type == this.type )
+	{
+		for ( var i = 0; i < from.tags.length; i++ )
+		{
+			this.addItem ( from.tags[i].value );
+		}
+		//tags
+	}
 	//this.addItem ( );
 }
 
 TagList.prototype = new Tag ( );
 
-TagList.prototype.addItem = function ( )
+TagList.prototype.addItem = function ( from )
 {
 	//var table = this.createTable ( this.div, true );
 	var div = document.createElement ( 'div' );
@@ -3423,7 +3445,7 @@ TagList.prototype.addItem = function ( )
 	this.div.appendChild ( div );
 
 	console.log ( 'Tag' + this.type );
-	var value = new tags[this.type] ( div, this.children, true )
+	var value = new tags[this.type] ( div, this.children, true, from )
 
 	this.tags.push ( {
 		value: value,
@@ -3446,16 +3468,16 @@ TagList.prototype.onAddButtonClick = function ( e )
 	return false;
 }
 
-function TagEnchantment ( container, structure, optional )
+function TagEnchantment ( container, structure, optional, from )
 {
-	this.tag = new ParamEnchantment ( container, '', true, null, {} );
+	this.tag = new ParamEnchantment ( container, '', true, from && from.tag );
 }
 
 TagEnchantment.prototype = new Tag ( );
 
-function TagShort ( container, structure, optional )
+function TagShort ( container, structure, optional, from )
 {
-	this.tag = new ParamNumber ( container, '', optional, null, {} );
+	this.tag = new ParamNumber ( container, '', optional, from && from.tag );
 }
 
 TagShort.prototype = new Tag ( );
@@ -3464,9 +3486,9 @@ var TagByte = TagShort;
 var TagInt = TagShort;
 var TagRGB = TagShort;
 
-function TagString ( container, structure, optional )
+function TagString ( container, structure, optional, form )
 {
-	this.tag = new ParamText ( container, '', optional, null, { special: true } );
+	this.tag = new ParamText ( container, '', optional, form && form.tag, { special: true } );
 }
 
 TagString.prototype = new Tag ( );

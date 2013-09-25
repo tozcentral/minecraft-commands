@@ -3,6 +3,9 @@
 var commands = {};
 var params = {};
 var tags = {};
+var blocks = [];
+var items = [];
+var entities = [];
 var selectors = [];
 
 var groupPrefix = 0;
@@ -860,6 +863,22 @@ CommandSetBlock.prototype.update = function ( )
 		this.params.tilename.container.style.display = 'none';
 		this.params.datavalue.container.style.display = 'none';
 	}
+	
+	var tilename = this.params.tilename.value.value;
+	var block;
+	
+	for ( var i = 0; i < blocks.length; i++ )
+	{
+		block = blocks[i];
+		
+		if ( block.id == tilename || block.tilename == tilename )
+		{
+			var tag = block.tag || 'BlockGeneric'
+			if ( tag != this.params.dataTag.value.type )
+				this.params.dataTag.value.updateType ( tag )
+			break
+		}
+	}
 
 	this.updateLoop ( );
 }
@@ -1241,10 +1260,10 @@ ParamAchievement.prototype = new Param ( );
 
 function ParamBlock ( container, defaultValue, optional, from, options )
 {
-	var option;
+	var option, block;
 	
 	this.optional = optional;
-	var blocks = {
+	/*var blocks = {
 		'minecraft:stone 0': 'Stone',
 		'minecraft:grass 0': 'Grass Block',
 		'minecraft:dirt 0': 'Dirt',
@@ -1353,8 +1372,8 @@ function ParamBlock ( container, defaultValue, optional, from, options )
 		'46 0': 'TNT',
 		'47 0': 'Bookshelf',
 		'48 0': 'Mossy Cobblestone',
-		'49 0': 'Obsidian',*/
-	};
+		'49 0': 'Obsidian',* /
+	};*/
 
 	this.value = from && from.value;
 
@@ -1369,12 +1388,15 @@ function ParamBlock ( container, defaultValue, optional, from, options )
 		select.appendChild ( option );
 	}
 
-	for ( var i in blocks )
+	for ( var i = 0; i < blocks.length; i++ )
 	{
+		block = blocks[i];
+		block.uid = ( block.id + ' ' + block.data )
+		
 		option = document.createElement ( 'option' );
-		option.selected = ( blocks[i] == ( this.value || options.defaultValue ) )
-		option.value = i;
-		option.appendChild ( document.createTextNode ( blocks[i] ) );
+		option.selected = ( block.uid == ( this.value || options.defaultValue ) )
+		option.value = block.uid;
+		option.appendChild ( document.createTextNode ( block.name ) );
 		select.appendChild ( option );
 	}
 
@@ -1499,6 +1521,8 @@ ParamDataTag.prototype.updateType = function ( type )
 	var options = this.options;
 
 	options.innerHTML = '';
+	
+	this.type = type;
 
 	if ( this.selector )
 		this.selector.value = type;
@@ -1588,12 +1612,12 @@ ParamEnchantment.prototype = new Param ( );
 
 function ParamItem ( container, defaultValue, optional, from, options )
 {
-	var option;
+	var option, item;
 	
 	this.options = options;
 	
 	this.optional = optional;
-	var items = {
+	/*var items = {
 		'1 0': 'Stone',
 		'2 0': 'Grass Block',
 		'3 0': 'Dirt',
@@ -1704,8 +1728,29 @@ function ParamItem ( container, defaultValue, optional, from, options )
 		'46 0': 'TNT',
 		'47 0': 'Bookshelf',
 		'48 0': 'Mossy Cobblestone',
-		'49 0': 'Obsidian'
-	};
+		'49 0': 'Obsidian',
+		'50 0': 'Torch',
+		'51 0': 'Fire',
+		'52 0': 'Monster Spawner',
+		'53 0': 'Oak Wood Stairs',
+		'54 0': 'Chest',
+		//'55 0': 'Block',
+		'56 0': 'Diamond Ore',
+		'57 0': 'Diamond Block',
+		'58 0': 'Crafting Table',
+		//'59 0': 'Block',
+		'60 0': 'Farmland',
+		'61 0': 'Furnace',
+		'62 0': 'Lit Furnace',
+		//'63 0': 'Block',
+		//'64 0': 'Block',
+		'65 0': 'Ladder',
+		'66 0': 'Rail',
+		'67 0': 'Stone Stairs',
+		//'68 0': 'Block',
+		'69 0': 'Lever',
+		'70 0': 'Block'
+	};*/
 
 	this.value = from && from.value;
 
@@ -1720,12 +1765,15 @@ function ParamItem ( container, defaultValue, optional, from, options )
 		select.appendChild ( option );
 	}
 
-	for ( var i in items )
+	for ( var i = 0; i < items.length; i++ )
 	{
+		item = items[i]
+		item.uid = item.id + ' ' + item.data
+		
 		option = document.createElement ( 'option' );
-		option.selected = ( items[i] == ( this.value || defaultValue ) )
-		option.value = i;
-		option.appendChild ( document.createTextNode ( items[i] ) );
+		option.selected = ( item.uid == ( this.value || defaultValue ) )
+		option.value = item.uid;
+		option.appendChild ( document.createTextNode ( item.name ) );
 		select.appendChild ( option );
 	}
 
@@ -3093,6 +3141,28 @@ function ItemGenericStructure ( )
 	};
 }
 
+function InventoryStructure ( )
+{
+	this.structure = {
+		'Items': {
+			type: 'List',
+			children: {
+				type: 'Compound',
+				children: {
+					'Slot': 'Byte',
+					'id': 'Short',
+					'Damage': 'Short',
+					'Count': 'Byte',
+					'tag': {
+						type: 'Compound',
+						children: (new ItemGenericStructure ( )).structure
+					}
+				}
+			}
+		}
+	};
+}
+
 function ItemBookAndQuillStructure ( )
 {
 	this.structure = (new ItemGenericStructure ( )).structure;
@@ -3186,6 +3256,15 @@ function ItemFireworkStructure ( )
 		}
 	};
 }
+
+function TagInventory ( container, from )
+{
+	var structure = (new InventoryStructure ( )).structure;
+
+	this.tag = new TagCompound ( container, structure, true, from );
+}
+
+TagInventory.prototype = new Tag ( );
 
 function TagBlockGeneric ( container, from )
 {
@@ -3333,7 +3412,6 @@ TagList.prototype = new Tag ( );
 TagList.prototype.addItem = function ( )
 {
 	//var table = this.createTable ( this.div, true );
-	console.log ( 'Tag' + this.type );
 	var div = document.createElement ( 'div' );
 	//div.className = 'mc-tag-options';
 
@@ -3382,6 +3460,7 @@ function TagShort ( container, structure, optional )
 
 TagShort.prototype = new Tag ( );
 
+var TagByte = TagShort;
 var TagInt = TagShort;
 var TagRGB = TagShort;
 
@@ -3593,6 +3672,8 @@ commands = {
 };
 
 tags = {
+	'Inventory': TagInventory,
+	
 	'BlockGeneric': TagBlockGeneric,
 	'ItemGeneric': TagItemGeneric,
 	'ItemBookAndQuill': TagItemBookAndQuill,
@@ -3603,9 +3684,1005 @@ tags = {
 	'List': TagList,
 	'Enchantment': TagEnchantment,
 	'Short': TagShort,
+	'Byte': TagByte,
 	'Int': TagInt,
 	'RGB': TagRGB,
 	'String': TagString
+}
+
+//** BLOCKS AND ITEMS GO HERE **//
+
+blocks = [
+{id:1,data:0,name:"Stone"},
+{id:2,data:0,name:"Grass Block"},
+{id:3,data:0,name:"Dirt"},
+{id:3,data:1,name:"Grassless Dirt"},
+{id:3,data:2,name:"Podzol"},
+{id:4,data:0,name:"Cobblestone"},
+{id:5,data:0,name:"Oak Wood Planks"},
+{id:5,data:1,name:"Spruce Wood Planks"},
+{id:5,data:2,name:"Birch Wood Planks"},
+{id:5,data:3,name:"Jungle Wood Planks"},
+{id:6,data:0,name:"Oak Sapling"},
+{id:6,data:1,name:"Spruce Sapling"},
+{id:6,data:2,name:"Birch Sapling"},
+{id:6,data:3,name:"Jungle Sapling"},
+{id:7,data:0,name:"Bedrock"},
+{id:8,data:0,name:"Flowing Water"},
+{id:9,data:0,name:"Still Water"},
+{id:10,data:0,name:"Flowing Lava"},
+{id:11,data:0,name:"Still Lava"},
+{id:12,data:0,name:"Sand"},
+{id:13,data:0,name:"Gravel"},
+{id:14,data:0,name:"Gold Ore"},
+{id:15,data:0,name:"Iron Ore"},
+{id:16,data:0,name:"Coal Ore"},
+{id:17,data:0,name:"Oak Wood"},
+{id:17,data:1,name:"Spruce Wood"},
+{id:17,data:2,name:"Birch Wood"},
+{id:17,data:3,name:"Jungle Wood"},
+{id:18,data:0,name:"Oak Leaves"},
+{id:18,data:1,name:"Spruce Leaves"},
+{id:18,data:2,name:"Birch Leaves"},
+{id:18,data:3,name:"Jungle Leaves"},
+{id:19,data:0,name:"Sponge"},
+{id:20,data:0,name:"Glass"},
+{id:21,data:0,name:"Lapis Lazuli Ore"},
+{id:22,data:0,name:"Lapis Lazuli Block"},
+{id:23,data:0,name:"Dispenser",tag:"Inventory"},
+{id:24,data:0,name:"Sandstone"},
+{id:24,data:1,name:"Chiseled Sandstone"},
+{id:24,data:2,name:"Smooth Sandstone"},
+{id:25,data:0,name:"Note Block"},
+{id:26,data:0,name:"Bed"},
+{id:27,data:0,name:"Powered Rail"},
+{id:28,data:0,name:"Detector Rail"},
+{id:29,data:0,name:"Sticky Piston"},
+{id:30,data:0,name:"Cobweb"},
+{id:31,data:1,name:"Tall Grass"},
+{id:31,data:2,name:"Fern"},
+{id:32,data:0,name:"Dead Bush"},
+{id:33,data:0,name:"Piston"},
+{id:35,data:0,name:"White Wool"},
+{id:35,data:1,name:"Orange Wool"},
+{id:35,data:2,name:"Magenta Wool"},
+{id:35,data:3,name:"Light Blue Wool"},
+{id:35,data:4,name:"Yellow Wool"},
+{id:35,data:5,name:"Lime Wool"},
+{id:35,data:6,name:"Pink Wool"},
+{id:35,data:7,name:"Gray Wool"},
+{id:35,data:8,name:"Light Gray Wool"},
+{id:35,data:9,name:"Cyan Wool"},
+{id:35,data:10,name:"Purple Wool"},
+{id:35,data:11,name:"Blue Wool"},
+{id:35,data:12,name:"Brown Wool"},
+{id:35,data:13,name:"Green Wool"},
+{id:35,data:14,name:"Red Wool"},
+{id:35,data:15,name:"Black Wool"},
+{id:37,data:0,name:"Flower"},
+{id:38,data:0,name:"Rose"},
+{id:39,data:0,name:"Brown Mushroom"},
+{id:40,data:0,name:"Red Mushroom"},
+{id:41,data:0,name:"Block of Gold"},
+{id:42,data:0,name:"Block of Iron"},
+{id:44,data:0,name:"Stone Slab"},
+{id:44,data:1,name:"Sandstone Slab"},
+{id:44,data:3,name:"Cobblestone Slab"},
+{id:44,data:4,name:"Bricks Slab"},
+{id:44,data:5,name:"Stone Bricks Slab"},
+{id:44,data:6,name:"Nether Brick Slab"},
+{id:44,data:7,name:"Quartz Slab"},
+{id:45,data:0,name:"Bricks"},
+{id:46,data:0,name:"TNT"},
+{id:47,data:0,name:"Bookshelf"},
+{id:48,data:0,name:"Moss Stone"},
+{id:49,data:0,name:"Obsidian"},
+{id:50,data:0,name:"Torch"},
+{id:51,data:0,name:"Fire"},
+{id:52,data:0,name:"Monster Spawner"},
+{id:53,data:0,name:"Oak Wood Stairs"},
+{id:54,data:0,name:"Chest",tag:"Inventory"},
+{id:55,data:0,name:"Redstone Dust"},
+{id:56,data:0,name:"Diamond Ore"},
+{id:57,data:0,name:"Block of Diamond"},
+{id:58,data:0,name:"Crafting Table"},
+{id:59,data:0,name:"Crops"},
+{id:60,data:0,name:"Farmland"},
+{id:61,data:0,name:"Furnace"},
+{id:62,data:0,name:"Furnace (Lit)"},
+{id:63,data:0,name:"Sign"},
+{id:64,data:0,name:"Wooden Door"},
+{id:65,data:0,name:"Ladder"},
+{id:66,data:0,name:"Rail"},
+{id:67,data:0,name:"Stone Stairs"},
+{id:68,data:0,name:"Sign"},
+{id:69,data:0,name:"Lever"},
+{id:70,data:0,name:"Pressure Plate"},
+{id:71,data:0,name:"Iron Door"},
+{id:72,data:0,name:"Pressure Plate"},
+{id:73,data:0,name:"Redstone Ore"},
+{id:74,data:0,name:"Redstone Ore"},
+{id:75,data:0,name:"Redstone Torch"},
+{id:76,data:0,name:"Redstone Torch"},
+{id:77,data:0,name:"Button"},
+{id:78,data:0,name:"Snow"},
+{id:79,data:0,name:"Ice"},
+{id:80,data:0,name:"Snow"},
+{id:81,data:0,name:"Cactus"},
+{id:82,data:0,name:"Clay"},
+{id:83,data:0,name:"Sugar cane"},
+{id:84,data:0,name:"Jukebox"},
+{id:85,data:0,name:"Fence"},
+{id:86,data:0,name:"Pumpkin"},
+{id:87,data:0,name:"Netherrack"},
+{id:88,data:0,name:"Soul Sand"},
+{id:89,data:0,name:"Glowstone"},
+{id:90,data:0,name:"Portal"},
+{id:91,data:0,name:"Jack o'Lantern"},
+{id:92,data:0,name:"Cake"},
+{id:93,data:0,name:"tile.diode.name"},
+{id:94,data:0,name:"tile.diode.name"},
+{id:95,data:0,name:"Locked chest"},
+{id:96,data:0,name:"Trapdoor"},
+{id:97,data:0,name:"Stone Monster Egg"},
+{id:97,data:1,name:"Cobblestone Monster Egg"},
+{id:97,data:2,name:"Stone Brick Monster Egg"},
+{id:98,data:0,name:"Stone Bricks"},
+{id:98,data:1,name:"Mossy Stone Bricks"},
+{id:98,data:2,name:"Cracked Stone Bricks"},
+{id:98,data:3,name:"Chiseled Stone Bricks"},
+{id:99,data:0,name:"Mushroom"},
+{id:100,data:0,name:"Mushroom"},
+{id:101,data:0,name:"Iron Bars"},
+{id:102,data:0,name:"Glass Pane"},
+{id:103,data:0,name:"Melon"},
+{id:104,data:0,name:"tile.pumpkinStem.name"},
+{id:105,data:0,name:"tile.pumpkinStem.name"},
+{id:106,data:0,name:"Vines"},
+{id:107,data:0,name:"Fence Gate"},
+{id:108,data:0,name:"Brick Stairs"},
+{id:109,data:0,name:"Stone Brick Stairs"},
+{id:110,data:0,name:"Mycelium"},
+{id:111,data:0,name:"Lily Pad"},
+{id:112,data:0,name:"Nether Brick"},
+{id:113,data:0,name:"Nether Brick Fence"},
+{id:114,data:0,name:"Nether Brick Stairs"},
+{id:115,data:0,name:"Nether Wart"},
+{id:116,data:0,name:"Enchantment Table"},
+{id:117,data:0,name:"tile.brewingStand.name"},
+{id:118,data:0,name:"Cauldron"},
+{id:119,data:0,name:"tile.null.name"},
+{id:120,data:0,name:"End Portal"},
+{id:121,data:0,name:"End Stone"},
+{id:122,data:0,name:"Dragon Egg"},
+{id:123,data:0,name:"Redstone Lamp"},
+{id:124,data:0,name:"Redstone Lamp"},
+{id:126,data:0,name:"Oak Wood Slab"},
+{id:126,data:1,name:"Spruce Wood Slab"},
+{id:126,data:2,name:"Birch Wood Slab"},
+{id:126,data:3,name:"Jungle Wood Slab"},
+{id:127,data:0,name:"Cocoa"},
+{id:128,data:0,name:"Sandstone Stairs"},
+{id:129,data:0,name:"Emerald Ore"},
+{id:130,data:0,name:"Ender Chest"},
+{id:131,data:0,name:"Tripwire Hook"},
+{id:132,data:0,name:"Tripwire"},
+{id:133,data:0,name:"Block of Emerald"},
+{id:134,data:0,name:"Spruce Wood Stairs"},
+{id:135,data:0,name:"Birch Wood Stairs"},
+{id:136,data:0,name:"Jungle Wood Stairs"},
+{id:137,data:0,name:"Command Block"},
+{id:138,data:0,name:"Beacon"},
+{id:139,data:0,name:"Cobblestone Wall"},
+{id:139,data:1,name:"Mossy Cobblestone Wall"},
+{id:140,data:0,name:"tile.flowerPot.name"},
+{id:141,data:0,name:"Carrots"},
+{id:142,data:0,name:"Potatoes"},
+{id:143,data:0,name:"Button"},
+{id:144,data:0,name:"tile.skull.name"},
+{id:145,data:0,name:"Anvil"},
+{id:145,data:1,name:"Slightly Damaged Anvil"},
+{id:145,data:2,name:"Very Damaged Anvil"},
+{id:146,data:0,name:"Trapped Chest",tag:"Inventory"},
+{id:147,data:0,name:"Weighted Pressure Plate (Light)"},
+{id:148,data:0,name:"Weighted Pressure Plate (Heavy)"},
+{id:149,data:0,name:"tile.comparator.name"},
+{id:150,data:0,name:"tile.comparator.name"},
+{id:151,data:0,name:"Daylight Sensor"},
+{id:152,data:0,name:"Block of Redstone"},
+{id:153,data:0,name:"Nether Quartz Ore"},
+{id:154,data:0,name:"Hopper"},
+{id:155,data:0,name:"Block of Quartz"},
+{id:155,data:1,name:"Chiseled Quartz Block"},
+{id:155,data:2,name:"Pillar Quartz Block"},
+{id:156,data:0,name:"Quartz Stairs"},
+{id:157,data:0,name:"Activator Rail"},
+{id:158,data:0,name:"Dropper",tag:"Inventory"},
+{id:159,data:0,name:"White Stained Clay"},
+{id:159,data:1,name:"Orange Stained Clay"},
+{id:159,data:2,name:"Magenta Stained Clay"},
+{id:159,data:3,name:"Light Blue Stained Clay"},
+{id:159,data:4,name:"Yellow Stained Clay"},
+{id:159,data:5,name:"Lime Stained Clay"},
+{id:159,data:6,name:"Pink Stained Clay"},
+{id:159,data:7,name:"Gray Stained Clay"},
+{id:159,data:8,name:"Light Gray Stained Clay"},
+{id:159,data:9,name:"Cyan Stained Clay"},
+{id:159,data:10,name:"Purple Stained Clay"},
+{id:159,data:11,name:"Blue Stained Clay"},
+{id:159,data:12,name:"Brown Stained Clay"},
+{id:159,data:13,name:"Green Stained Clay"},
+{id:159,data:14,name:"Red Stained Clay"},
+{id:159,data:15,name:"Black Stained Clay"},
+{id:170,data:0,name:"Hay Bale"},
+{id:171,data:0,name:"Carpet"},
+{id:171,data:1,name:"Orange Carpet"},
+{id:171,data:2,name:"Magenta Carpet"},
+{id:171,data:3,name:"Light Blue Carpet"},
+{id:171,data:4,name:"Yellow Carpet"},
+{id:171,data:5,name:"Lime Carpet"},
+{id:171,data:6,name:"Pink Carpet"},
+{id:171,data:7,name:"Gray Carpet"},
+{id:171,data:8,name:"Light Gray Carpet"},
+{id:171,data:9,name:"Cyan Carpet"},
+{id:171,data:10,name:"Purple Carpet"},
+{id:171,data:11,name:"Blue Carpet"},
+{id:171,data:12,name:"Brown Carpet"},
+{id:171,data:13,name:"Green Carpet"},
+{id:171,data:14,name:"Red Carpet"},
+{id:171,data:15,name:"Black Carpet"},
+{id:172,data:0,name:"Hardened Clay"},
+{id:173,data:0,name:"Block of Coal"},
+{id:174,data:0,name:"Packed Ice"},
+{id:175,data:0,name:"Sunflower"},
+{id:175,data:1,name:"Lilac"},
+{id:175,data:2,name:"Double Tall Grass"},
+{id:175,data:3,name:"Large Fern"},
+{id:175,data:4,name:"RoseBush"},
+{id:175,data:5,name:"Peony"}
+];
+items = [
+{id:1,data:0,name:"Stone"},
+{id:2,data:0,name:"Grass Block"},
+{id:3,data:0,name:"Dirt"},
+{id:3,data:1,name:"Grassless Dirt"},
+{id:3,data:2,name:"Podzol"},
+{id:4,data:0,name:"Cobblestone"},
+{id:5,data:0,name:"Oak Wood Planks"},
+{id:5,data:1,name:"Spruce Wood Planks"},
+{id:5,data:2,name:"Birch Wood Planks"},
+{id:5,data:3,name:"Jungle Wood Planks"},
+{id:6,data:0,name:"Oak Sapling"},
+{id:6,data:1,name:"Spruce Sapling"},
+{id:6,data:2,name:"Birch Sapling"},
+{id:6,data:3,name:"Jungle Sapling"},
+{id:7,data:0,name:"Bedrock"},
+{id:8,data:0,name:"Flowing Water"},
+{id:9,data:0,name:"Still Water"},
+{id:10,data:0,name:"Flowing Lava"},
+{id:11,data:0,name:"Still Lava"},
+{id:12,data:0,name:"Sand"},
+{id:13,data:0,name:"Gravel"},
+{id:14,data:0,name:"Gold Ore"},
+{id:15,data:0,name:"Iron Ore"},
+{id:16,data:0,name:"Coal Ore"},
+{id:17,data:0,name:"Oak Wood"},
+{id:17,data:1,name:"Spruce Wood"},
+{id:17,data:2,name:"Birch Wood"},
+{id:17,data:3,name:"Jungle Wood"},
+{id:18,data:0,name:"Oak Leaves"},
+{id:18,data:1,name:"Spruce Leaves"},
+{id:18,data:2,name:"Birch Leaves"},
+{id:18,data:3,name:"Jungle Leaves"},
+{id:19,data:0,name:"Sponge"},
+{id:20,data:0,name:"Glass"},
+{id:21,data:0,name:"Lapis Lazuli Ore"},
+{id:22,data:0,name:"Lapis Lazuli Block"},
+{id:23,data:0,name:"Dispenser"},
+{id:24,data:0,name:"Sandstone"},
+{id:24,data:1,name:"Chiseled Sandstone"},
+{id:24,data:2,name:"Smooth Sandstone"},
+{id:25,data:0,name:"Note Block"},
+{id:26,data:0,name:"Bed"},
+{id:27,data:0,name:"Powered Rail"},
+{id:28,data:0,name:"Detector Rail"},
+{id:29,data:0,name:"Sticky Piston"},
+{id:30,data:0,name:"Cobweb"},
+{id:31,data:1,name:"Tall Grass"},
+{id:31,data:2,name:"Fern"},
+{id:32,data:0,name:"Dead Bush"},
+{id:33,data:0,name:"Piston"},
+{id:35,data:0,name:"White Wool"},
+{id:35,data:1,name:"Orange Wool"},
+{id:35,data:2,name:"Magenta Wool"},
+{id:35,data:3,name:"Light Blue Wool"},
+{id:35,data:4,name:"Yellow Wool"},
+{id:35,data:5,name:"Lime Wool"},
+{id:35,data:6,name:"Pink Wool"},
+{id:35,data:7,name:"Gray Wool"},
+{id:35,data:8,name:"Light Gray Wool"},
+{id:35,data:9,name:"Cyan Wool"},
+{id:35,data:10,name:"Purple Wool"},
+{id:35,data:11,name:"Blue Wool"},
+{id:35,data:12,name:"Brown Wool"},
+{id:35,data:13,name:"Green Wool"},
+{id:35,data:14,name:"Red Wool"},
+{id:35,data:15,name:"Black Wool"},
+{id:37,data:0,name:"Flower"},
+{id:38,data:0,name:"Rose"},
+{id:39,data:0,name:"Brown Mushroom"},
+{id:40,data:0,name:"Red Mushroom"},
+{id:41,data:0,name:"Block of Gold"},
+{id:42,data:0,name:"Block of Iron"},
+{id:44,data:0,name:"Stone Slab"},
+{id:44,data:1,name:"Sandstone Slab"},
+{id:44,data:3,name:"Cobblestone Slab"},
+{id:44,data:4,name:"Bricks Slab"},
+{id:44,data:5,name:"Stone Bricks Slab"},
+{id:44,data:6,name:"Nether Brick Slab"},
+{id:44,data:7,name:"Quartz Slab"},
+{id:45,data:0,name:"Bricks"},
+{id:46,data:0,name:"TNT"},
+{id:47,data:0,name:"Bookshelf"},
+{id:48,data:0,name:"Moss Stone"},
+{id:49,data:0,name:"Obsidian"},
+{id:50,data:0,name:"Torch"},
+{id:51,data:0,name:"Fire"},
+{id:52,data:0,name:"Monster Spawner"},
+{id:53,data:0,name:"Oak Wood Stairs"},
+{id:54,data:0,name:"Chest"},
+{id:55,data:0,name:"Redstone Dust"},
+{id:56,data:0,name:"Diamond Ore"},
+{id:57,data:0,name:"Block of Diamond"},
+{id:58,data:0,name:"Crafting Table"},
+{id:59,data:0,name:"Crops"},
+{id:60,data:0,name:"Farmland"},
+{id:61,data:0,name:"Furnace"},
+{id:62,data:0,name:"Furnace (Lit)"},
+{id:63,data:0,name:"Sign"},
+{id:64,data:0,name:"Wooden Door"},
+{id:65,data:0,name:"Ladder"},
+{id:66,data:0,name:"Rail"},
+{id:67,data:0,name:"Stone Stairs"},
+{id:68,data:0,name:"Sign"},
+{id:69,data:0,name:"Lever"},
+{id:70,data:0,name:"Pressure Plate"},
+{id:71,data:0,name:"Iron Door"},
+{id:72,data:0,name:"Pressure Plate"},
+{id:73,data:0,name:"Redstone Ore"},
+{id:74,data:0,name:"Redstone Ore"},
+{id:75,data:0,name:"Redstone Torch"},
+{id:76,data:0,name:"Redstone Torch"},
+{id:77,data:0,name:"Button"},
+{id:78,data:0,name:"Snow"},
+{id:79,data:0,name:"Ice"},
+{id:80,data:0,name:"Snow"},
+{id:81,data:0,name:"Cactus"},
+{id:82,data:0,name:"Clay"},
+{id:83,data:0,name:"Sugar cane"},
+{id:84,data:0,name:"Jukebox"},
+{id:85,data:0,name:"Fence"},
+{id:86,data:0,name:"Pumpkin"},
+{id:87,data:0,name:"Netherrack"},
+{id:88,data:0,name:"Soul Sand"},
+{id:89,data:0,name:"Glowstone"},
+{id:90,data:0,name:"Portal"},
+{id:91,data:0,name:"Jack o'Lantern"},
+{id:92,data:0,name:"Cake"},
+{id:93,data:0,name:"tile.diode.name"},
+{id:94,data:0,name:"tile.diode.name"},
+{id:95,data:0,name:"Locked chest"},
+{id:96,data:0,name:"Trapdoor"},
+{id:97,data:0,name:"Stone Monster Egg"},
+{id:97,data:1,name:"Cobblestone Monster Egg"},
+{id:97,data:2,name:"Stone Brick Monster Egg"},
+{id:98,data:0,name:"Stone Bricks"},
+{id:98,data:1,name:"Mossy Stone Bricks"},
+{id:98,data:2,name:"Cracked Stone Bricks"},
+{id:98,data:3,name:"Chiseled Stone Bricks"},
+{id:99,data:0,name:"Mushroom"},
+{id:100,data:0,name:"Mushroom"},
+{id:101,data:0,name:"Iron Bars"},
+{id:102,data:0,name:"Glass Pane"},
+{id:103,data:0,name:"Melon"},
+{id:104,data:0,name:"tile.pumpkinStem.name"},
+{id:105,data:0,name:"tile.pumpkinStem.name"},
+{id:106,data:0,name:"Vines"},
+{id:107,data:0,name:"Fence Gate"},
+{id:108,data:0,name:"Brick Stairs"},
+{id:109,data:0,name:"Stone Brick Stairs"},
+{id:110,data:0,name:"Mycelium"},
+{id:111,data:0,name:"Lily Pad"},
+{id:112,data:0,name:"Nether Brick"},
+{id:113,data:0,name:"Nether Brick Fence"},
+{id:114,data:0,name:"Nether Brick Stairs"},
+{id:115,data:0,name:"Nether Wart"},
+{id:116,data:0,name:"Enchantment Table"},
+{id:117,data:0,name:"tile.brewingStand.name"},
+{id:118,data:0,name:"Cauldron"},
+{id:119,data:0,name:"tile.null.name"},
+{id:120,data:0,name:"End Portal"},
+{id:121,data:0,name:"End Stone"},
+{id:122,data:0,name:"Dragon Egg"},
+{id:123,data:0,name:"Redstone Lamp"},
+{id:124,data:0,name:"Redstone Lamp"},
+{id:126,data:0,name:"Oak Wood Slab"},
+{id:126,data:1,name:"Spruce Wood Slab"},
+{id:126,data:2,name:"Birch Wood Slab"},
+{id:126,data:3,name:"Jungle Wood Slab"},
+{id:127,data:0,name:"Cocoa"},
+{id:128,data:0,name:"Sandstone Stairs"},
+{id:129,data:0,name:"Emerald Ore"},
+{id:130,data:0,name:"Ender Chest"},
+{id:131,data:0,name:"Tripwire Hook"},
+{id:132,data:0,name:"Tripwire"},
+{id:133,data:0,name:"Block of Emerald"},
+{id:134,data:0,name:"Spruce Wood Stairs"},
+{id:135,data:0,name:"Birch Wood Stairs"},
+{id:136,data:0,name:"Jungle Wood Stairs"},
+{id:137,data:0,name:"Command Block"},
+{id:138,data:0,name:"Beacon"},
+{id:139,data:0,name:"Cobblestone Wall"},
+{id:139,data:1,name:"Mossy Cobblestone Wall"},
+{id:140,data:0,name:"tile.flowerPot.name"},
+{id:141,data:0,name:"Carrots"},
+{id:142,data:0,name:"Potatoes"},
+{id:143,data:0,name:"Button"},
+{id:144,data:0,name:"tile.skull.name"},
+{id:145,data:0,name:"Anvil"},
+{id:145,data:1,name:"Slightly Damaged Anvil"},
+{id:145,data:2,name:"Very Damaged Anvil"},
+{id:146,data:0,name:"Trapped Chest"},
+{id:147,data:0,name:"Weighted Pressure Plate (Light)"},
+{id:148,data:0,name:"Weighted Pressure Plate (Heavy)"},
+{id:149,data:0,name:"tile.comparator.name"},
+{id:150,data:0,name:"tile.comparator.name"},
+{id:151,data:0,name:"Daylight Sensor"},
+{id:152,data:0,name:"Block of Redstone"},
+{id:153,data:0,name:"Nether Quartz Ore"},
+{id:154,data:0,name:"Hopper"},
+{id:155,data:0,name:"Block of Quartz"},
+{id:155,data:1,name:"Chiseled Quartz Block"},
+{id:155,data:2,name:"Pillar Quartz Block"},
+{id:156,data:0,name:"Quartz Stairs"},
+{id:157,data:0,name:"Activator Rail"},
+{id:158,data:0,name:"Dropper"},
+{id:159,data:0,name:"White Stained Clay"},
+{id:159,data:1,name:"Orange Stained Clay"},
+{id:159,data:2,name:"Magenta Stained Clay"},
+{id:159,data:3,name:"Light Blue Stained Clay"},
+{id:159,data:4,name:"Yellow Stained Clay"},
+{id:159,data:5,name:"Lime Stained Clay"},
+{id:159,data:6,name:"Pink Stained Clay"},
+{id:159,data:7,name:"Gray Stained Clay"},
+{id:159,data:8,name:"Light Gray Stained Clay"},
+{id:159,data:9,name:"Cyan Stained Clay"},
+{id:159,data:10,name:"Purple Stained Clay"},
+{id:159,data:11,name:"Blue Stained Clay"},
+{id:159,data:12,name:"Brown Stained Clay"},
+{id:159,data:13,name:"Green Stained Clay"},
+{id:159,data:14,name:"Red Stained Clay"},
+{id:159,data:15,name:"Black Stained Clay"},
+{id:170,data:0,name:"Hay Bale"},
+{id:171,data:0,name:"Carpet"},
+{id:171,data:1,name:"Orange Carpet"},
+{id:171,data:2,name:"Magenta Carpet"},
+{id:171,data:3,name:"Light Blue Carpet"},
+{id:171,data:4,name:"Yellow Carpet"},
+{id:171,data:5,name:"Lime Carpet"},
+{id:171,data:6,name:"Pink Carpet"},
+{id:171,data:7,name:"Gray Carpet"},
+{id:171,data:8,name:"Light Gray Carpet"},
+{id:171,data:9,name:"Cyan Carpet"},
+{id:171,data:10,name:"Purple Carpet"},
+{id:171,data:11,name:"Blue Carpet"},
+{id:171,data:12,name:"Brown Carpet"},
+{id:171,data:13,name:"Green Carpet"},
+{id:171,data:14,name:"Red Carpet"},
+{id:171,data:15,name:"Black Carpet"},
+{id:172,data:0,name:"Hardened Clay"},
+{id:173,data:0,name:"Block of Coal"},
+{id:256,data:0,name:"Iron Shovel"},
+{id:257,data:0,name:"Iron Pickaxe"},
+{id:258,data:0,name:"Iron Axe"},
+{id:259,data:0,name:"Flint and Steel"},
+{id:260,data:0,name:"Apple"},
+{id:261,data:0,name:"Bow"},
+{id:262,data:0,name:"Arrow"},
+{id:263,data:0,name:"Coal"},
+{id:263,data:1,name:"Charcoal"},
+{id:264,data:0,name:"Diamond"},
+{id:265,data:0,name:"Iron Ingot"},
+{id:266,data:0,name:"Gold Ingot"},
+{id:267,data:0,name:"Iron Sword"},
+{id:268,data:0,name:"Wooden Sword"},
+{id:269,data:0,name:"Wooden Shovel"},
+{id:270,data:0,name:"Wooden Pickaxe"},
+{id:271,data:0,name:"Wooden Axe"},
+{id:272,data:0,name:"Stone Sword"},
+{id:273,data:0,name:"Stone Shovel"},
+{id:274,data:0,name:"Stone Pickaxe"},
+{id:275,data:0,name:"Stone Axe"},
+{id:276,data:0,name:"Diamond Sword"},
+{id:277,data:0,name:"Diamond Shovel"},
+{id:278,data:0,name:"Diamond Pickaxe"},
+{id:279,data:0,name:"Diamond Axe"},
+{id:280,data:0,name:"Stick"},
+{id:281,data:0,name:"Bowl"},
+{id:282,data:0,name:"Mushroom Stew"},
+{id:283,data:0,name:"Golden Sword"},
+{id:284,data:0,name:"Golden Shovel"},
+{id:285,data:0,name:"Golden Pickaxe"},
+{id:286,data:0,name:"Golden Axe"},
+{id:287,data:0,name:"String"},
+{id:288,data:0,name:"Feather"},
+{id:289,data:0,name:"Gunpowder"},
+{id:290,data:0,name:"Wooden Hoe"},
+{id:291,data:0,name:"Stone Hoe"},
+{id:292,data:0,name:"Iron Hoe"},
+{id:293,data:0,name:"Diamond Hoe"},
+{id:294,data:0,name:"Golden Hoe"},
+{id:295,data:0,name:"Seeds"},
+{id:296,data:0,name:"Wheat"},
+{id:297,data:0,name:"Bread"},
+{id:298,data:0,name:"Leather Cap"},
+{id:299,data:0,name:"Leather Tunic"},
+{id:300,data:0,name:"Leather Pants"},
+{id:301,data:0,name:"Leather Boots"},
+{id:302,data:0,name:"Chain Helmet"},
+{id:303,data:0,name:"Chain Chestplate"},
+{id:304,data:0,name:"Chain Leggings"},
+{id:305,data:0,name:"Chain Boots"},
+{id:306,data:0,name:"Iron Helmet"},
+{id:307,data:0,name:"Iron Chestplate"},
+{id:308,data:0,name:"Iron Leggings"},
+{id:309,data:0,name:"Iron Boots"},
+{id:310,data:0,name:"Diamond Helmet"},
+{id:311,data:0,name:"Diamond Chestplate"},
+{id:312,data:0,name:"Diamond Leggings"},
+{id:313,data:0,name:"Diamond Boots"},
+{id:314,data:0,name:"Golden Helmet"},
+{id:315,data:0,name:"Golden Chestplate"},
+{id:316,data:0,name:"Golden Leggings"},
+{id:317,data:0,name:"Golden Boots"},
+{id:318,data:0,name:"Flint"},
+{id:319,data:0,name:"Raw Porkchop"},
+{id:320,data:0,name:"Cooked Porkchop"},
+{id:321,data:0,name:"Painting"},
+{id:322,data:0,name:"Golden Apple"},
+{id:322,data:1,name:"Golden Apple"},
+{id:323,data:0,name:"Sign"},
+{id:324,data:0,name:"Wooden Door"},
+{id:325,data:0,name:"Bucket"},
+{id:326,data:0,name:"Water Bucket"},
+{id:327,data:0,name:"Lava Bucket"},
+{id:328,data:0,name:"Minecart"},
+{id:329,data:0,name:"Saddle"},
+{id:330,data:0,name:"Iron Door"},
+{id:331,data:0,name:"Redstone"},
+{id:332,data:0,name:"Snowball"},
+{id:333,data:0,name:"Boat"},
+{id:334,data:0,name:"Leather"},
+{id:335,data:0,name:"Milk"},
+{id:336,data:0,name:"Brick"},
+{id:337,data:0,name:"Clay"},
+{id:338,data:0,name:"Sugar Canes"},
+{id:339,data:0,name:"Paper"},
+{id:340,data:0,name:"Book"},
+{id:341,data:0,name:"Slimeball"},
+{id:342,data:0,name:"Minecart with Chest"},
+{id:343,data:0,name:"Minecart with Furnace"},
+{id:344,data:0,name:"Egg"},
+{id:345,data:0,name:"Compass"},
+{id:346,data:0,name:"Fishing Rod"},
+{id:347,data:0,name:"Clock"},
+{id:348,data:0,name:"Glowstone Dust"},
+{id:349,data:0,name:"Raw Fish"},
+{id:350,data:0,name:"Cooked Fish"},
+{id:351,data:0,name:"Ink Sac"},
+{id:351,data:1,name:"Rose Red"},
+{id:351,data:2,name:"Cactus Green"},
+{id:351,data:3,name:"Cocoa Beans"},
+{id:351,data:4,name:"Lapis Lazuli"},
+{id:351,data:5,name:"Purple Dye"},
+{id:351,data:6,name:"Cyan Dye"},
+{id:351,data:7,name:"Light Gray Dye"},
+{id:351,data:8,name:"Gray Dye"},
+{id:351,data:9,name:"Pink Dye"},
+{id:351,data:10,name:"Lime Dye"},
+{id:351,data:11,name:"Dandelion Yellow"},
+{id:351,data:12,name:"Light Blue Dye"},
+{id:351,data:13,name:"Magenta Dye"},
+{id:351,data:14,name:"Orange Dye"},
+{id:351,data:15,name:"Bone Meal"},
+{id:352,data:0,name:"Bone"},
+{id:353,data:0,name:"Sugar"},
+{id:354,data:0,name:"Cake"},
+{id:355,data:0,name:"Bed"},
+{id:356,data:0,name:"Redstone Repeater"},
+{id:357,data:0,name:"Cookie"},
+{id:358,data:0,name:"Map"},
+{id:359,data:0,name:"Shears"},
+{id:360,data:0,name:"Melon"},
+{id:361,data:0,name:"Pumpkin Seeds"},
+{id:362,data:0,name:"Melon Seeds"},
+{id:363,data:0,name:"Raw Beef"},
+{id:364,data:0,name:"Steak"},
+{id:365,data:0,name:"Raw Chicken"},
+{id:366,data:0,name:"Cooked Chicken"},
+{id:367,data:0,name:"Rotten Flesh"},
+{id:368,data:0,name:"Ender Pearl"},
+{id:369,data:0,name:"Blaze Rod"},
+{id:370,data:0,name:"Ghast Tear"},
+{id:371,data:0,name:"Gold Nugget"},
+{id:372,data:0,name:"Nether Wart"},
+{id:373,data:0,name:"Potion"},
+{id:373,data:8193,name:"Potion"},
+{id:373,data:8225,name:"Potion"},
+{id:373,data:8257,name:"Potion"},
+{id:373,data:16385,name:"Potion"},
+{id:373,data:16417,name:"Potion"},
+{id:373,data:16449,name:"Potion"},
+{id:373,data:8194,name:"Potion"},
+{id:373,data:8226,name:"Potion"},
+{id:373,data:8258,name:"Potion"},
+{id:373,data:16386,name:"Potion"},
+{id:373,data:16418,name:"Potion"},
+{id:373,data:16450,name:"Potion"},
+{id:373,data:8227,name:"Potion"},
+{id:373,data:8259,name:"Potion"},
+{id:373,data:16419,name:"Potion"},
+{id:373,data:16451,name:"Potion"},
+{id:373,data:8196,name:"Potion"},
+{id:373,data:8228,name:"Potion"},
+{id:373,data:8260,name:"Potion"},
+{id:373,data:16388,name:"Potion"},
+{id:373,data:16420,name:"Potion"},
+{id:373,data:16452,name:"Potion"},
+{id:373,data:8261,name:"Potion"},
+{id:373,data:8229,name:"Potion"},
+{id:373,data:16453,name:"Potion"},
+{id:373,data:16421,name:"Potion"},
+{id:373,data:8230,name:"Potion"},
+{id:373,data:8262,name:"Potion"},
+{id:373,data:16422,name:"Potion"},
+{id:373,data:16454,name:"Potion"},
+{id:373,data:8232,name:"Potion"},
+{id:373,data:8264,name:"Potion"},
+{id:373,data:16424,name:"Potion"},
+{id:373,data:16456,name:"Potion"},
+{id:373,data:8201,name:"Potion"},
+{id:373,data:8233,name:"Potion"},
+{id:373,data:8265,name:"Potion"},
+{id:373,data:16393,name:"Potion"},
+{id:373,data:16425,name:"Potion"},
+{id:373,data:16457,name:"Potion"},
+{id:373,data:8234,name:"Potion"},
+{id:373,data:8266,name:"Potion"},
+{id:373,data:16426,name:"Potion"},
+{id:373,data:16458,name:"Potion"},
+{id:373,data:8268,name:"Potion"},
+{id:373,data:8236,name:"Potion"},
+{id:373,data:16460,name:"Potion"},
+{id:373,data:16428,name:"Potion"},
+{id:373,data:8238,name:"Potion"},
+{id:373,data:8270,name:"Potion"},
+{id:373,data:16430,name:"Potion"},
+{id:373,data:16462,name:"Potion"},
+{id:374,data:0,name:"Glass Bottle"},
+{id:375,data:0,name:"Spider Eye"},
+{id:376,data:0,name:"Fermented Spider Eye"},
+{id:377,data:0,name:"Blaze Powder"},
+{id:378,data:0,name:"Magma Cream"},
+{id:379,data:0,name:"Brewing Stand"},
+{id:380,data:0,name:"Cauldron"},
+{id:381,data:0,name:"Eye of Ender"},
+{id:382,data:0,name:"Glistering Melon"},
+{id:383,data:50,name:"Spawn"},
+{id:383,data:51,name:"Spawn"},
+{id:383,data:52,name:"Spawn"},
+{id:383,data:54,name:"Spawn"},
+{id:383,data:55,name:"Spawn"},
+{id:383,data:56,name:"Spawn"},
+{id:383,data:57,name:"Spawn"},
+{id:383,data:58,name:"Spawn"},
+{id:383,data:59,name:"Spawn"},
+{id:383,data:60,name:"Spawn"},
+{id:383,data:61,name:"Spawn"},
+{id:383,data:62,name:"Spawn"},
+{id:383,data:65,name:"Spawn"},
+{id:383,data:66,name:"Spawn"},
+{id:383,data:90,name:"Spawn"},
+{id:383,data:91,name:"Spawn"},
+{id:383,data:92,name:"Spawn"},
+{id:383,data:93,name:"Spawn"},
+{id:383,data:94,name:"Spawn"},
+{id:383,data:95,name:"Spawn"},
+{id:383,data:96,name:"Spawn"},
+{id:383,data:98,name:"Spawn"},
+{id:383,data:100,name:"Spawn"},
+{id:383,data:120,name:"Spawn"},
+{id:384,data:0,name:"Bottle o' Enchanting"},
+{id:385,data:0,name:"Fire Charge"},
+{id:386,data:0,name:"Book and Quill"},
+{id:387,data:0,name:"Written Book"},
+{id:388,data:0,name:"Emerald"},
+{id:389,data:0,name:"Item Frame"},
+{id:390,data:0,name:"Flower Pot"},
+{id:391,data:0,name:"Carrot"},
+{id:392,data:0,name:"Potato"},
+{id:393,data:0,name:"Baked Potato"},
+{id:394,data:0,name:"Poisonous Potato"},
+{id:395,data:0,name:"Empty Map"},
+{id:396,data:0,name:"Golden Carrot"},
+{id:397,data:0,name:"Skeleton Skull"},
+{id:397,data:1,name:"Wither Skeleton Skull"},
+{id:397,data:2,name:"Zombie Head"},
+{id:397,data:3,name:"Head"},
+{id:397,data:4,name:"Creeper Head"},
+{id:398,data:0,name:"Carrot on a Stick"},
+{id:399,data:0,name:"Nether Star"},
+{id:400,data:0,name:"Pumpkin Pie"},
+{id:401,data:0,name:"Firework Rocket"},
+{id:402,data:0,name:"Firework Star"},
+{id:403,data:0,name:"Enchanted Book"},
+{id:404,data:0,name:"Redstone Comparator"},
+{id:405,data:0,name:"Nether Brick"},
+{id:406,data:0,name:"Nether Quartz"},
+{id:407,data:0,name:"Minecart with TNT"},
+{id:408,data:0,name:"Minecart with Hopper"},
+{id:417,data:0,name:"Iron Horse Armor"},
+{id:418,data:0,name:"Gold Horse Armor"},
+{id:419,data:0,name:"Diamond Horse Armor"},
+{id:420,data:0,name:"Lead"},
+{id:421,data:0,name:"Name Tag"},
+{id:2256,data:0,name:"Music Disc"},
+{id:2257,data:0,name:"Music Disc"},
+{id:2258,data:0,name:"Music Disc"},
+{id:2259,data:0,name:"Music Disc"},
+{id:2260,data:0,name:"Music Disc"},
+{id:2261,data:0,name:"Music Disc"},
+{id:2262,data:0,name:"Music Disc"},
+{id:2263,data:0,name:"Music Disc"},
+{id:2264,data:0,name:"Music Disc"},
+{id:2265,data:0,name:"Music Disc"},
+{id:2266,data:0,name:"Music Disc"},
+{id:2267,data:0,name:"Music Disc"},
+{id:174,data:0,name:"Packed Ice"},
+{id:175,data:0,name:"Sunflower"},
+{id:175,data:1,name:"Lilac"},
+{id:175,data:2,name:"Double Tall Grass"},
+{id:175,data:3,name:"Large Fern"},
+{id:175,data:4,name:"RoseBush"},
+{id:175,data:5,name:"Peony"}
+];
+
+
+entities = {
+	'MushroomCow': {
+		name: 'Mooshroom',
+		tag: 'MonsterGeneric'
+	},
+	'Chicken': {
+		name: 'Chicken',
+		tag: 'MonsterGeneric'
+	},
+	'Sheep': {
+		name: 'Sheep',
+		tag: 'MonsterGeneric'
+	},
+	'Giant': {
+		name: 'Giant',
+		tag: 'MonsterGeneric'
+	},
+	'MinecartHopper': {
+		name: 'Minecart Hopper',
+		tag: 'MonsterGeneric'
+	},
+	'Boat': {
+		name: 'Boat',
+		tag: 'MonsterGeneric'
+	},
+	'SmallFireball': {
+		name: 'Small Fireball',
+		tag: 'MonsterGeneric'
+	},
+	'PigZombie': {
+		name: 'Zombie Pigman',
+		tag: 'MonsterGeneric'
+	},
+	'WitherBoss': {
+		name: 'Wither',
+		tag: 'MonsterGeneric'
+	},
+	'Slime': {
+		name: 'Slime',
+		tag: 'MonsterGeneric'
+	},
+	'Item': {
+		name: 'Item',
+		tag: 'MonsterGeneric'
+	},
+	'LeashKnot': {
+		name: 'Leash Knot',
+		tag: 'MonsterGeneric'
+	},
+	'Blaze': {
+		name: 'Blaze',
+		tag: 'MonsterGeneric'
+	},
+	'Pig': {
+		name: 'Pig',
+		tag: 'MonsterGeneric'
+	},
+	'Fireball': {
+		name: 'Fireball',
+		tag: 'MonsterGeneric'
+	},
+	'Wolf': {
+		name: 'Wolf',
+		tag: 'MonsterGeneric'
+	},
+	'CaveSpider': {
+		name: 'Cave Spider',
+		tag: 'MonsterGeneric'
+	},
+	'MinecartSpawner': {
+		name: 'Minecart Spawner',
+		tag: 'MonsterGeneric'
+	},
+	'EnderDragon': {
+		name: 'Ender Dragon',
+		tag: 'MonsterGeneric'
+	},
+	'Monster': {
+		name: 'Monster',
+		tag: 'MonsterGeneric'
+	},
+	'SnowMan': {
+		name: 'Snow Golem',
+		tag: 'MonsterGeneric'
+	},
+	'MinecartRidable': {
+		name: 'Minecart',
+		tag: 'MonsterGeneric'
+	},
+	'Painting': {
+		name: 'Painting',
+		tag: 'MonsterGeneric'
+	},
+	'Witch': {
+		name: 'Witch',
+		tag: 'MonsterGeneric'
+	},
+	'ThrownExpBottle': {
+		name: 'XP Bottle',
+		tag: 'MonsterGeneric'
+	},
+	'Snowball': {
+		name: 'Snowball',
+		tag: 'MonsterGeneric'
+	},
+	'MinecraftChest': {
+		name: 'Minecraft Chest',
+		tag: 'MonsterGeneric'
+	},
+	'WitherSkull': {
+		name: 'Wither Skull',
+		tag: 'MonsterGeneric'
+	},
+	'Enderman': {
+		name: 'Enderman',
+		tag: 'MonsterGeneric'
+	},
+	'MinecartFurnace': {
+		name: 'Minecart Furnace',
+		tag: 'MonsterGeneric'
+	},
+	'EnderCrystal': {
+		name: 'Ender Crystal',
+		tag: 'MonsterGeneric'
+	},
+	'FireworksRocketEntity': {
+		name: 'Firework',
+		tag: 'MonsterGeneric'
+	},
+	'Mob': {
+		name: 'Mob',
+		tag: 'MonsterGeneric'
+	},
+	'Creeper': {
+		name: 'Creeper',
+		tag: 'MonsterGeneric'
+	},
+	'Arrow': {
+		name: 'Arrow',
+		tag: 'MonsterGeneric'
+	},
+	'EntityHorse': {
+		name: 'Horse',
+		tag: 'MonsterGeneric'
+	},
+	'LavaSlime': {
+		name: 'Magma Cube',
+		tag: 'MonsterGeneric'
+	},
+	'ThrownPotion': {
+		name: 'Potion',
+		tag: 'MonsterGeneric'
+	},
+	'Silverfish': {
+		name: 'Silverfish',
+		tag: 'MonsterGeneric'
+	},
+	'Spider': {
+		name: 'Spider',
+		tag: 'MonsterGeneric'
+	},
+	'ThrownEnderpearl': {
+		name: 'Enderpearl',
+		tag: 'MonsterGeneric'
+	},
+	'EyeOfEnderSignal': {
+		name: 'Eye Of Ender',
+		tag: 'MonsterGeneric'
+	},
+	'Bat': {
+		name: 'Bat',
+		tag: 'MonsterGeneric'
+	},
+	'VillagerGolem': {
+		name: 'Golem',
+		tag: 'MonsterGeneric'
+	},
+	'PrimedTnt': {
+		name: 'Primed TNT',
+		tag: 'MonsterGeneric'
+	},
+	'FallingSand': {
+		name: 'Falling Sand',
+		tag: 'MonsterGeneric'
+	},
+	'ItemFrame': {
+		name: 'Item Frame',
+		tag: 'MonsterGeneric'
+	},
+	'XPOrb': {
+		name: 'XP Orb',
+		tag: 'MonsterGeneric'
+	},
+	'MinecartTNT': {
+		name: 'Minecart TNT',
+		tag: 'MonsterGeneric'
+	},
+	'Ozelot': {
+		name: 'Ocelot',
+		tag: 'MonsterGeneric'
+	},
+	'Villager': {
+		name: 'Villager',
+		tag: 'MonsterGeneric'
+	},
+	'Squid': {
+		name: 'Squid',
+		tag: 'MonsterGeneric'
+	},
+	'Zombie': {
+		name: 'Zombie',
+		tag: 'MonsterGeneric'
+	},
+	'Cow': {
+		name: 'Cow',
+		tag: 'MonsterGeneric'
+	},
+	'Skeleton': {
+		name: 'Skeleton',
+		tag: 'MonsterGeneric'
+	},
+	'Ghast': {
+		name: 'Ghast',
+		tag: 'MonsterGeneric'
+	},
 }
 
 params = {

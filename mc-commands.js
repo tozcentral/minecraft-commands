@@ -16,6 +16,40 @@ function quote ( value )
 	return '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'") + '"'
 }
 
+function mergeObjects ( )
+{
+	var argument, object = {};
+	
+	for ( var i = 0; i < arguments.length; i++ )
+	{
+		argument = arguments[i];
+		
+		if ( typeof argument == 'object' )
+		{
+			for ( var name in argument )
+			{
+				if ( argument.hasOwnProperty ( name ) && !object.hasOwnProperty ( name ) )
+					object[name] = argument[name]
+			}
+		}
+	}
+	
+	return object;
+}
+
+function onAddClick ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+
+	if ( e.preventDefault )
+		e.preventDefault ( );
+
+	this.addItem ( );
+
+	return false;
+}
+
 function onRemoveClick ( e, parent )
 {
 	e = e || window.event;
@@ -153,12 +187,21 @@ function Command ( )
 {
 }
 
-Command.prototype.init = function ( name, description )
+Command.prototype.init = function ( container, name, description, options )
 {
+	var defaultOptions = {};
+	
+	options = mergeObjects ( options, defaultOptions );
+	
+	this.container = container
+	
 	this.name = name
 	this.description = description
+	
 	this.params = {};
 	this.paramsOrdered = [];
+	
+	this.options = options;
 }
 
 Command.prototype.updateLoop = function ( )
@@ -176,9 +219,6 @@ Command.prototype.updateLoop = function ( )
 				param.value.setError ( false );
 			continue;
 		}
-			
-		//if ( !nextHasValue && this.paramsOrdered[i + 1] && ( this.paramsOrdered[i + 1].container.style.display === '' || this.paramsOrdered[i + 1].ignoreIfHidden === false ) )
-		//	nextHasValue = ( this.paramsOrdered[i + 1].value.toString ( ) !== '' );
 
 		if ( param.container.style.display === '' || param.ignoreIfHidden === false )
 			param.value.update ( param.neverRequireValue ? false : nextHasValue );
@@ -209,8 +249,6 @@ Command.prototype.toString = function ( )
 	var nextHasValue = false;
 	for ( var i = this.paramsOrdered.length - 1; i >= 0; i-- )
 	{
-		//if ( !nextHasValue && this.paramsOrdered[i + 1] && !this.paramsOrdered[i + 1].ignoreValue && ( this.paramsOrdered[i + 1].container.style.display === '' || this.paramsOrdered[i + 1].ignoreIfHidden === false ) )
-		//	nextHasValue = ( this.paramsOrdered[i + 1].value.toString ( ) !== '' );
 		param = this.paramsOrdered[i]
 
 		if ( param.group !== undefined && param.groupIndex !== undefined && !this.groupRadioSelected ( param.group, param.groupIndex ) )
@@ -294,14 +332,23 @@ Command.prototype.groupRadioFirst = function ( name, index )
 
 Command.prototype.createParam = function ( container, name, type, from, options )
 {
-	options = options || {};
+	var defaultOptions = {
+		optional: false,
+		ignoreValue: false,
+		ignoreIfHidden: true,
+		neverRequireValue: false
+	}
+	
+	options = mergeObjects ( options || {}, defaultOptions );
+	
+	//options = options || {};
 	if ( options.completelyOptional )
 		options.optional = options.neverRequireValue = true
-	options.defaultValue = options.defaultValue === undefined ? undefined : options.defaultValue
+	/*options.defaultValue = options.defaultValue === undefined ? undefined : options.defaultValue
 	options.ignoreValue = options.ignoreValue === undefined ? false : options.ignoreValue
 	options.ignoreIfHidden = options.ignoreIfHidden === undefined ? true : options.ignoreIfHidden
 	options.optional = options.optional === undefined ? false : options.optional
-	options.neverRequireValue = options.neverRequireValue === undefined ? false : options.neverRequireValue
+	options.neverRequireValue = options.neverRequireValue === undefined ? false : options.neverRequireValue*/
 
 	var row = document.createElement ( 'tr' );
 
@@ -325,7 +372,7 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 	}
 	
 	console.log ( 'Param' + type );
-	var value = new params[type] ( cell, options.defaultValue, options.optional, from && from[name] && from[name].value, options );
+	var value = new params[type] ( cell, from && from[name] && from[name].value, options );
 
 	if ( options && options.remove )
 	{
@@ -355,7 +402,7 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 		groupRadiobox: options.groupRadiobox
 	};
 
-	if ( this.params[name] == undefined )
+	if ( this.params[name] === undefined )
 		this.params[name] = param
 		
 	this.paramsOrdered.push ( param );
@@ -368,10 +415,7 @@ Command.prototype.onGroupRadioboxChange = function ( e )
 
 function GenericCommand ( container, name, from )
 {
-	this.name = name;
-	this.description = commands[name].description;
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, name, commands[name].description )
 
 	from = from && from.params;
 
@@ -381,7 +425,7 @@ function GenericCommand ( container, name, from )
 	{
 		var param = params[i];
 
-		this.createParam ( container, param.name, param.type || 'Text', from, {defaultValue: param.defaultValue || '', ignoreIfHidden: param.ignoreIfHidden || true, optinal: param.optinal || false} );
+		this.createParam ( container, param.name, param.type || 'Text', from, param.options );
 	}
 }
 
@@ -389,10 +433,7 @@ GenericCommand.prototype = new Command ( );
 
 function CommandAchievement ( container, from )
 {
-	this.name = 'achievement'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'achievement', '' )
 
 	from = from && from.params;
 
@@ -405,10 +446,7 @@ CommandAchievement.prototype = new Command ( );
 
 function CommandClear ( container, from )
 {
-	this.name = 'clear'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'clear', '' )
 
 	from = from && from.params;
 
@@ -446,10 +484,7 @@ CommandClear.prototype.update = function ( )
 
 function CommandDebug ( container, from )
 {
-	this.name = 'debug'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'debug', '' )
 
 	from = from && from.params;
 
@@ -460,10 +495,7 @@ CommandDebug.prototype = new Command ( );
 
 function CommandDefaultGamemode ( container, from )
 {
-	this.name = 'defaultgamemode'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'defaultgamemode', '' )
 
 	from = from && from.params;
 
@@ -474,10 +506,7 @@ CommandDefaultGamemode.prototype = new Command ( );
 
 function CommandDifficulty ( container, from )
 {
-	this.name = 'difficulty'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'difficulty', '' )
 
 	from = from && from.params;
 
@@ -488,10 +517,7 @@ CommandDifficulty.prototype = new Command ( );
 
 function CommandEffect ( container, from )
 {
-	this.name = 'effect'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'effect', '' )
 
 	from = from && from.params;
 
@@ -547,11 +573,8 @@ CommandEffect.prototype.toString = function ( )
 
 function CommandEnchant ( container, from )
 {
-	this.name = 'enchant'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
-
+	this.init ( container, 'enchant', '' )
+	
 	from = from && from.params;
 
 	this.createParam ( container, 'player', 'PlayerSelector', from );
@@ -606,10 +629,7 @@ CommandEnchant.prototype.update = function ( )
 
 function CommandGamemode ( container, from )
 {
-	this.name = 'gamemode'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'gamemode', '' )
 
 	from = from && from.params;
 
@@ -621,10 +641,7 @@ CommandGamemode.prototype = new Command ( );
 
 function CommandGameRule ( container, from )
 {
-	this.name = 'gamerule'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'gamerule', '' )
 
 	from = from && from.params;
 
@@ -637,10 +654,7 @@ CommandGameRule.prototype = new Command ( );
 
 function CommandGive ( container, from )
 {
-	this.name = 'give'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'give', '' )
 
 	from = from && from.params;
 
@@ -656,14 +670,16 @@ CommandGive.prototype = new Command ( );
 
 CommandGive.prototype.update = function ( )
 {
-	if ( this.params['item metadata'].value.value === '0' )
+	var selectValue = this.params['item metadata'].value.value.toString ( );
+	
+	if ( selectValue === '0' )
 	{
 		this.params.item.container.style.display = '';
 		this.params.metadata.container.style.display = '';
 	}
 	else
 	{
-		var itemMetadata = this.params['item metadata'].value.value.split ( ' ' );
+		var itemMetadata = selectValue.split ( ' ' );
 
 		this.params.item.value.setValue ( itemMetadata[0] || '' );
 		this.params.item.container.style.display = 'none';
@@ -696,10 +712,7 @@ CommandGive.prototype.update = function ( )
 
 function CommandMe ( container, from )
 {
-	this.name = 'me'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'me', '' )
 
 	from = from && from.params;
 
@@ -710,10 +723,7 @@ CommandMe.prototype = new Command ( );
 
 function CommandPlaySound ( container, from )
 {
-	this.name = 'playsound'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'playsound', '' )
 
 	from = from && from.params;
 
@@ -731,10 +741,7 @@ CommandPlaySound.prototype = new Command ( );
 
 function CommandSay ( container, from )
 {
-	this.name = 'say'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'say', '' )
 
 	from = from && from.params;
 
@@ -745,10 +752,7 @@ CommandSay.prototype = new Command ( );
 
 function CommandScoreBoard ( container, from )
 {
-	this.name = 'scoreboard'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'scoreboard', '' )
 
 	from = from && from.params;
 
@@ -765,10 +769,7 @@ CommandScoreBoard.prototype = new Command ( );
 
 function CommandSetBlock ( container, from )
 {
-	this.name = 'setblock'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'setblock', '' )
 
 	from = from && from.params;
 
@@ -786,14 +787,16 @@ CommandSetBlock.prototype = new Command ( );
 
 CommandSetBlock.prototype.update = function ( )
 {
-	if ( this.params['tilename datavalue'].value.value === 'custom' )
+	var selectValue = this.params['tilename datavalue'].value.value.toString ( );
+	
+	if ( selectValue === 'custom' )
 	{
 		this.params.tilename.container.style.display = '';
 		this.params.datavalue.container.style.display = '';
 	}
 	else
 	{
-		var itemMetadata = this.params['tilename datavalue'].value.value.split ( ' ' );
+		var itemMetadata = selectValue.split ( ' ' );
 
 		this.params.tilename.value.setValue ( itemMetadata[0] || '' );
 		this.params.datavalue.value.setValue ( itemMetadata[1] || '' );
@@ -823,10 +826,7 @@ CommandSetBlock.prototype.update = function ( )
 
 function CommandSpawnPoint ( container, from )
 {
-	this.name = 'spawnpoint'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'spawnpoint', '' )
 
 	from = from && from.params;
 
@@ -840,11 +840,7 @@ CommandSpawnPoint.prototype = new Command ( );
 
 function CommandSpreadPlayers ( container, from )
 {
-	this.name = 'spreadplayers'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
-	this.container = container;
+	this.init ( container, 'spreadplayers', '' )
 
 	from = from && from.params;
 
@@ -858,24 +854,13 @@ function CommandSpreadPlayers ( container, from )
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Player' ) );
-	button.addEventListener ( 'click', ( function ( command ) { return function ( e ) { command.onAddButtonClick ( e ) } } ) ( this ) );
+	button.addEventListener ( 'click', ( function ( command ) { return function ( e ) { command.onAddClick ( e ) } } ) ( this ) );
 	container.appendChild ( button );
 }
 
 CommandSpreadPlayers.prototype = new Command ( );
 
-CommandSpreadPlayers.prototype.onAddButtonClick = function ( e )
-{
-	e = e || window.event;
-	var target = e.target || e.srcElement;
-
-	if ( e.preventDefault )
-		e.preventDefault ( );
-
-	this.addItem ( );
-
-	return false;
-}
+CommandSpreadPlayers.prototype.onAddClick = onAddClick;
 
 CommandSpreadPlayers.prototype.addItem = function ( )
 {
@@ -905,10 +890,7 @@ CommandSpreadPlayers.prototype.addItem = function ( )
 
 function CommandSummon ( container, from )
 {
-	this.name = 'summon'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'summon', '' )
 
 	from = from && from.params;
 
@@ -971,10 +953,7 @@ CommandTell.prototype = new Command ( );
 
 function CommandTellRaw ( container, from )
 {
-	this.name = 'tellraw'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'tellraw', '' )
 
 	from = from && from.params;
 
@@ -986,10 +965,7 @@ CommandTellRaw.prototype = new Command ( );
 
 function CommandTestFor ( container, from )
 {
-	this.name = 'testfor'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'testfor', '' )
 
 	from = from && from.params;
 
@@ -1000,10 +976,7 @@ CommandTestFor.prototype = new Command ( );
 
 function CommandTestForBlock ( container, from )
 {
-	this.name = 'testforblock'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'testforblock', '' )
 
 	from = from && from.params;
 
@@ -1020,14 +993,16 @@ CommandTestForBlock.prototype = new Command ( );
 
 CommandTestForBlock.prototype.update = function ( )
 {
-	if ( this.params['tilename datavalue'].value.value === 'custom' )
+	var selectValue = this.params['tilename datavalue'].value.value.toString ( );
+	
+	if ( selectValue === 'custom' )
 	{
 		this.params.tilename.container.style.display = '';
 		this.params.datavalue.container.style.display = '';
 	}
 	else
 	{
-		var itemMetadata = this.params['tilename datavalue'].value.value.split ( ' ' );
+		var itemMetadata = selectValue.split ( ' ' );
 
 		this.params.tilename.value.setValue ( itemMetadata[0] || '' );
 		this.params.datavalue.value.setValue ( itemMetadata[1] || '' );
@@ -1057,10 +1032,7 @@ CommandTestForBlock.prototype.update = function ( )
 
 function CommandTime ( container, from )
 {
-	this.name = 'time'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'time', '' )
 
 	from = from && from.params;
 
@@ -1072,22 +1044,14 @@ CommandTime.prototype = new Command ( );
 
 function CommandToggleDownFall ( container, from )
 {
-	this.name = 'toggledownfall'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
-
-	from = from && from.params;
+	this.init ( container, 'toggledownfall', '' )
 }
 
 CommandToggleDownFall.prototype = new Command ( );
 
 function CommandTP ( container, from )
 {
-	this.name = 'tp'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'tp', '' )
 	this.groupPrefix = 'tp-' + (++groupPrefix)
 
 	from = from && from.params;
@@ -1103,10 +1067,7 @@ CommandTP.prototype = new Command ( );
 
 function CommandWeather ( container, from )
 {
-	this.name = 'weather'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'weather', '' )
 
 	from = from && from.params;
 
@@ -1118,10 +1079,7 @@ CommandWeather.prototype = new Command ( );
 
 function CommandXP ( container, from )
 {
-	this.name = 'xp'
-	this.description = '';
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, 'xp', '' )
 
 	from = from && from.params;
 
@@ -1136,6 +1094,24 @@ function Param ( )
 }
 
 Param.prototype = new Command ( );
+
+Param.prototype.init = function ( container, description, options )
+{
+	var defaultOptions = {
+		optional: false
+	};
+	
+	options = mergeObjects ( options, defaultOptions );
+	
+	this.container = container
+	
+	this.description = description
+	
+	this.params = {};
+	this.paramsOrdered = [];
+	
+	this.options = options;
+}
 
 Param.prototype.selectGroup = function ( )
 {
@@ -1177,17 +1153,15 @@ Param.prototype.setValue = function ( v )
 Param.prototype.toString = function ( needValue )
 {
 	var value = this.value;
+	var defaultValue = this.options && this.options.defaultValue !== null ? this.options.defaultValue : '';
+	
+	if ( needValue && value === '' && defaultValue !== '' )
+		value = defaultValue
+	else if ( !needValue && value == defaultValue )
+		value = '';
 	
 	if ( this.options && this.options.quote && value !== '' )
 		value = quote ( value )
-	
-	if ( value === '' && needValue && this.input && this.input.placeholder )
-	{
-		value = this.input.placeholder;
-	
-		if ( this.options && this.options.quote && value !== '' )
-			value = quote ( value )
-	}
 	
 	return value;
 }
@@ -1205,13 +1179,19 @@ Param.prototype.setError = function ( error )
 
 Param.prototype.update = function ( nextHasValue )
 {
+	if ( !this.input )
+		return;
+	
+	var required = !this.options.optional || nextHasValue || false;
+
+	if ( required )
+		this.input.className = this.value === '' ? 'error' : '';
 }
 
-function ParamAchievement ( container, defaultValue, optional, from, options )
+function ParamAchievement ( container, from, options )
 {
-	var optgroup, option, i;
+	this.init ( container, '', options );
 	
-	this.optional = optional;
 	var achievements = {
 		'openInventory': 'Taking Inventory',
 		'mineWood': 'Getting Wood',
@@ -1249,12 +1229,22 @@ function ParamAchievement ( container, defaultValue, optional, from, options )
 
 	var stats = {
 	};
+	
+	var optgroup, option, i;
 
-	this.value = from && from.value;
+	var value = from && from.value || options && options.defaultValue;
 
 	var select = document.createElement ( 'select' )
 	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
-
+	
+	if ( options.optional )
+	{
+		option = document.createElement ( 'option' );
+		option.value = '';
+		option.appendChild ( document.createTextNode ( 'None' ) );
+		select.appendChild ( option );
+	}
+	
 	optgroup = document.createElement ( 'optgroup' )
 	optgroup.label = 'Achievements';
 	select.appendChild ( optgroup );
@@ -1262,7 +1252,7 @@ function ParamAchievement ( container, defaultValue, optional, from, options )
 	for ( i in achievements )
 	{
 		option = document.createElement ( 'option' );
-		option.selected = ( achievements[i] == ( this.value || options.defaultValue ) )
+		option.selected = ( achievements[i] == ( value || options.defaultValue ) )
 		option.value = 'achievement.' + i;
 		option.appendChild ( document.createTextNode ( achievements[i] ) );
 		optgroup.appendChild ( option );
@@ -1275,12 +1265,13 @@ function ParamAchievement ( container, defaultValue, optional, from, options )
 	for ( i in stats )
 	{
 		option = document.createElement ( 'option' );
-		option.selected = ( stats[i] == ( this.value || options.defaultValue ) )
+		option.selected = ( stats[i] == ( value || options.defaultValue ) )
 		option.value = 'stat.' + i;
 		option.appendChild ( document.createTextNode ( stats[i] ) );
 		optgroup.appendChild ( option );
 	}
 
+	this.input = select;
 	this.value = select.value;
 
 	container.appendChild ( select );
@@ -1288,18 +1279,18 @@ function ParamAchievement ( container, defaultValue, optional, from, options )
 
 ParamAchievement.prototype = new Param ( );
 
-function ParamBlock ( container, defaultValue, optional, from, options )
+function ParamBlock ( container, from, options )
 {
-	var option, block;
+	this.init ( container, '', options );
 	
-	this.optional = optional;
+	var option, block;
 
 	this.value = from && from.value;
 
 	var select = document.createElement ( 'select' )
 	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
-	if ( optional )
+	if ( options.optional )
 	{
 		option = document.createElement ( 'option' );
 		option.value = '';
@@ -1331,12 +1322,12 @@ function ParamBlock ( container, defaultValue, optional, from, options )
 
 ParamBlock.prototype = new Param ( );
 
-function ParamBoolean ( container, defaultValue, optional, from, options )
+function ParamBoolean ( container, from, options )
 {
-	this.optional = optional
-	this.options = options
+	this.init ( container, '', options );
+	
 	this.checked = from && from.value || 'false'
-	this.value = this.checked == 'true' ? 'true' : ( optional ? '' : 'false' )
+	this.value = this.checked == 'true' ? 'true' : ( options.optional ? '' : 'false' )
 
 	var input = document.createElement ( 'input' )
 	input.type = 'checkbox'
@@ -1358,17 +1349,16 @@ ParamBoolean.prototype.onCheckboxChange = function ( e )
 	this.checked = target.checked ? 'true' : 'false'
 	
 	if ( this.options && this.options.numberOutput )
-		this.value = this.checked == 'true' ? '1' : ( this.optional ? '' : '0' )
+		this.value = this.checked == 'true' ? '1' : ( this.options.optional ? '' : '0' )
 	else
-		this.value = this.checked == 'true' ? 'true' : ( this.optional ? '' : 'false' )
+		this.value = this.checked == 'true' ? 'true' : ( this.options.optional ? '' : 'false' )
 
 	updateCommand ( );
 }
 
-function ParamCommandSelector ( container, defaultValue, optional, from, options )
+function ParamCommandSelector ( container, from, options )
 {
-	this.optional = optional;
-	this.options = options;
+	this.init ( container, '', options );
 
 	this.commandSelector = new CommandSelector ( container );
 }
@@ -1390,10 +1380,11 @@ ParamCommandSelector.prototype.toString = function ( )
 	return value 
 }
 
-function ParamDataTag ( container, defaultValue, optional, from, options )
+function ParamDataTag ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	this.tag = null;
-	this.optional = optional;
 
 	this.createHTML ( container, ( options && options.selector ) || false );
 
@@ -1419,7 +1410,7 @@ ParamDataTag.prototype.createHTML = function ( container, showSelector )
 		selector.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
 		container.appendChild ( selector );
 
-		if ( this.optional )
+		if ( this.options.optional )
 		{
 			option = document.createElement ( 'option' );
 			option.appendChild ( document.createTextNode ( 'None' ) );
@@ -1450,7 +1441,7 @@ ParamDataTag.prototype.updateType = function ( type )
 	if ( this.selector )
 		this.selector.value = type;
 
-	this.tag = new tags['Compound'] ( options, type, this.optional, this.tag );
+	this.tag = new tags['Compound'] ( options, this.tag, { optional: this.options.optional, structure: type } );
 }
 
 ParamDataTag.prototype.update = function ( )
@@ -1464,11 +1455,12 @@ ParamDataTag.prototype.toString = function ( )
 	return this.tag ? this.tag.toString ( ) : '';
 }
 
-function ParamEnchantment ( container, defaultValue, optional, from, options )
+function ParamEnchantment ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	var option;
 	
-	this.optional = optional;
 	var enchantments = {
 		0: 'Protection',
 		1: 'Fire Protection',
@@ -1508,7 +1500,7 @@ function ParamEnchantment ( container, defaultValue, optional, from, options )
 	var select = document.createElement ( 'select' )
 	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
-	if ( optional )
+	if ( options.optional )
 	{
 		option = document.createElement ( 'option' );
 		option.value = '';
@@ -1519,7 +1511,7 @@ function ParamEnchantment ( container, defaultValue, optional, from, options )
 	for ( var i in enchantments )
 	{
 		option = document.createElement ( 'option' );
-		option.selected = ( enchantments[i] == ( this.value || defaultValue ) )
+		option.selected = ( enchantments[i] == ( this.value || options && options.defaultValue ) )
 		option.value = i;
 		option.appendChild ( document.createTextNode ( enchantments[i] ) );
 		select.appendChild ( option );
@@ -1532,18 +1524,18 @@ function ParamEnchantment ( container, defaultValue, optional, from, options )
 
 ParamEnchantment.prototype = new Param ( );
 
-function ParamEntity ( container, defaultValue, optional, from, options )
+function ParamEntity ( container, from, options )
 {
-	var option, entity;
+	this.init ( container, '', options );
 	
-	this.optional = optional;
+	var option, entity;
 
 	this.value = from && from.value;
 
 	var select = document.createElement ( 'select' )
 	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
-	if ( optional )
+	if ( options.optional )
 	{
 		option = document.createElement ( 'option' );
 		option.value = '';
@@ -1566,7 +1558,7 @@ function ParamEntity ( container, defaultValue, optional, from, options )
 		else
 		{
 			option = document.createElement ( 'option' );
-			option.selected = ( entity.id == ( this.value || defaultValue ) )
+			option.selected = ( entity.id == ( this.value || options && options.defaultValue ) )
 			option.value = entity.id;
 			option.appendChild ( document.createTextNode ( entity.name ) );
 			optionParent.appendChild ( option );
@@ -1585,20 +1577,18 @@ function ParamEntity ( container, defaultValue, optional, from, options )
 
 ParamEntity.prototype = new Param ( );
 
-function ParamItem ( container, defaultValue, optional, from, options )
+function ParamItem ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	var option, item;
-	
-	this.options = options;
-	
-	this.optional = optional;
 
-	this.value = from && from.value;
+	this.value = from && from.value || '';
 
 	var select = document.createElement ( 'select' )
 	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
-	if ( optional )
+	if ( options.optional )
 	{
 		option = document.createElement ( 'option' );
 		option.value = '';
@@ -1612,7 +1602,7 @@ function ParamItem ( container, defaultValue, optional, from, options )
 		item.uid = item.id + ' ' + item.data
 		
 		option = document.createElement ( 'option' );
-		option.selected = ( item.uid == ( this.value || defaultValue ) )
+		option.selected = ( item.uid == ( this.value || options && options.defaultValue ) )
 		option.value = item.uid;
 		option.appendChild ( document.createTextNode ( item.name ) );
 		select.appendChild ( option );
@@ -1630,13 +1620,10 @@ function ParamItem ( container, defaultValue, optional, from, options )
 
 ParamItem.prototype = new Param ( );
 
-function ParamItemTag ( container, defaultValue, optional, from, options )
+function ParamItemTag ( container, from, options )
 {
-	this.options = options;
-	this.params = {};
-	this.paramsOrdered = [];
+	this.init ( container, '', options );
 	
-	this.optional = optional;
 	this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
 	this.createParam ( container, 'item', 'Number', from, { ignoreIfHidden: false, min:1 } );
 	this.createParam ( container, 'metadata', 'Number', from, { ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
@@ -1678,12 +1665,11 @@ ParamItemTag.prototype.toString = function ( )
 	return quote ( '{id:' + itemID + ( itemDamage != '' ? ',Damage:' + itemDamage : '' ) + ( tag != '' ? ',tag:' + tag : '' ) + '}' )
 }
 
-function ParamList ( container, defaultValue, optional, from, options )
+function ParamList ( container, from, options )
 {
-	var option;
+	this.init ( container, '', options );
 	
-	this.optional = optional;
-	this.options = options;
+	var option;
 
 	this.value = from && from.value;
 
@@ -1693,7 +1679,7 @@ function ParamList ( container, defaultValue, optional, from, options )
 	for ( var i = 0; i < options.items.length; i++ )
 	{
 		option = document.createElement ( 'option' );
-		option.selected = ( options.items[i] == ( this.value || defaultValue ) )
+		option.selected = ( options.items[i] == ( this.value || options && options.defaultValue ) )
 		option.appendChild ( document.createTextNode ( options.items[i] ) );
 		select.appendChild ( option );
 	}
@@ -1710,17 +1696,17 @@ ParamList.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
-	var required = !this.optional || nextHasValue || false;
+	var required = !this.options.optional || nextHasValue || false;
 
 	if ( required && this.value === '' )
 		this.setError ( true );
 }
 
-function ParamPlayerSelector ( container, defaultValue, optional, from, options )
+function ParamPlayerSelector ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	this.player = null;
-	this.optional = optional;
-	this.options = options;
 
 	this.createHTML ( container );
 
@@ -1741,7 +1727,7 @@ ParamPlayerSelector.prototype.createHTML = function ( container )
 	selector.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
 	container.appendChild ( selector );
 
-	if ( this.optional )
+	if ( this.options.optional )
 	{
 		var option = document.createElement ( 'option' );
 		option.appendChild ( document.createTextNode ( 'None' ) );
@@ -1797,7 +1783,7 @@ ParamPlayerSelector.prototype.updatePlayer = function ( player )
 
 	optionsContainer.innerHTML = '';
 	
-	if ( !this.optional && player == 'None' )
+	if ( !this.options.optional && player == 'None' )
 		player = 'Username'
 
 	this.selector.value = player;
@@ -1811,7 +1797,7 @@ ParamPlayerSelector.prototype.updatePlayer = function ( player )
 			this.player = new PlayerUsername ( optionsContainer, false, this.player );
 		break;
 		default:
-			this.player = new PlayerSelector ( optionsContainer, player, this.optional, this.player );
+			this.player = new PlayerSelector ( optionsContainer, player, this.options.optional, this.player );
 	}
 }
 
@@ -1831,12 +1817,12 @@ ParamPlayerSelector.prototype.toString = function ( )
 	return this.player ? this.player.toString ( ) : '';
 }
 
-function ParamPos ( container, defaultValue, optional, from, options )
+function ParamPos ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	this.isRelative = from && from.isRelative ? from.isRelative : false;
 	this.value = from && from.value ? from.value : '';
-	this.optional = optional;
-	this.options = options;
 
 	var label = document.createElement ( 'label' );
 	container.appendChild ( label );
@@ -1857,7 +1843,7 @@ function ParamPos ( container, defaultValue, optional, from, options )
 	}
 	if ( options && options.isFloat )
 		input.step = "any";
-	if ( defaultValue !== undefined )
+	if ( options && options.defaultValue !== undefined )
 		input.placeholder = options.defaultValue;
 	input.value = this.value;
 	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
@@ -1898,7 +1884,7 @@ ParamPos.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
-	var required = !this.optional || nextHasValue || false;
+	var required = !this.options.optional || nextHasValue || false;
 
 	if ( required && !this.isRelative && this.value === '' )
 		this.setError ( true );
@@ -1924,9 +1910,10 @@ ParamPos.prototype.toString = function ( )
 	return ( this.isRelative ? '~' : '' ) + this.value;
 }
 
-function ParamPotion ( container, defaultValue, optional, from, options )
+function ParamPotion ( container, from, options )
 {
-	this.optional = optional;
+	this.init ( container, '', options );
+	
 	var potions = {
 		1: 'Speed',
 		2: 'Slowness',
@@ -1979,9 +1966,10 @@ function ParamPotion ( container, defaultValue, optional, from, options )
 
 ParamPotion.prototype = new Param ( );
 
-function ParamRawMessage ( container, defaultValue, optional, from, options )
+function ParamRawMessage ( container, from, options )
 {
-	this.optional = optional;
+	this.init ( container, '', options );
+	
 	this.params = {};
 	this.paramsOrdered = [];
 	this.groupPrefix = 'raw-message-' + (++groupPrefix)
@@ -1991,7 +1979,7 @@ function ParamRawMessage ( container, defaultValue, optional, from, options )
 	var table = document.createElement ( 'table' );
 	container.appendChild ( table );
 	
-	this.createParam ( table, 'text', 'Text', from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true, special: true } );
+	this.createParam ( table, 'text', 'Text', from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true, hasSpecial: true } );
 	this.createParam ( table, 'translate', 'Text', from, { group: 'text', groupIndex: 1, groupPrefix: this.groupPrefix, quote: true } );
 	this.createParam ( table, 'color', 'Text', from, { optional: true } );
 	this.createParam ( table, 'bold', 'Boolean', from, { optional: true } );
@@ -2075,10 +2063,9 @@ ParamRawMessage.prototype.toString = function ( previous )
 	return items == '' ? '' : '{' + items + '}'
 }
 
-function ParamRawMessageEvent ( container, defaultValue, optional, from, options )
+function ParamRawMessageEvent ( container, from, options )
 {
-	this.optional = optional;
-	this.options = options;
+	this.init ( container, '', options );
 	
 	this.param = from && form.param
 	
@@ -2111,7 +2098,7 @@ ParamRawMessageEvent.prototype.createHTML = function ( container )
 	selector.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
 	cell.appendChild ( selector );
 
-	if ( this.optional )
+	if ( this.options.optional )
 	{
 		option = document.createElement ( 'option' );
 		option.value = '';
@@ -2172,19 +2159,19 @@ ParamRawMessageEvent.prototype.updateParam = function ( param )
 		break
 		case 'run_command':
 		case 'suggest_command':
-			this.param = new params['CommandSelector'] ( optionsContainer, null, false, this.param, { quote: true } );
+			this.param = new params['CommandSelector'] ( optionsContainer, this.param, { quote: true } );
 		break
 		case 'open_url':
-			this.param = new params['Text'] ( optionsContainer, null, false, this.param, { quote: true } );
+			this.param = new params['Text'] ( optionsContainer, this.param, { quote: true } );
 		break
 		case 'show_text':
-			this.param = new params['RawMessage'] ( optionsContainer, null, false, this.param );
+			this.param = new params['RawMessage'] ( optionsContainer, this.param );
 		break
 		case 'show_item':
-			this.param = new params['ItemTag'] ( optionsContainer, null, false, this.param );
+			this.param = new params['ItemTag'] ( optionsContainer, this.param );
 		break
 		case 'show_achievement':
-			this.param = new params['Achievement'] ( optionsContainer, null, false, this.param );
+			this.param = new params['Achievement'] ( optionsContainer, this.param );
 		break
 	}
 }
@@ -2208,10 +2195,10 @@ ParamRawMessageEvent.prototype.toString = function ( )
 	return '';
 }
 
-function ParamRawMessageExtras ( container, defaultValue, optional, from, options )
+function ParamRawMessageExtras ( container, from, options )
 {
-	this.optional = optional;
-	this.options = options;
+	this.init ( container, '', options );
+	
 	this.items = [];
 
 	var table = document.createElement ( 'table' );
@@ -2296,8 +2283,10 @@ ParamRawMessageExtras.prototype.toString = function ( previous )
 	return items == '' ? '' : '[' + items + ']'
 }
 
-function ParamScoreboardObjectives ( container, defaultValue, optional, from, options )
+function ParamScoreboardObjectives ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	var options = document.createElement ( 'table' );
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
@@ -2307,8 +2296,10 @@ function ParamScoreboardObjectives ( container, defaultValue, optional, from, op
 
 ParamScoreboardObjectives.prototype = new Param ( );
 
-function ParamScoreboardPlayers ( container, defaultValue, optional, from, options )
+function ParamScoreboardPlayers ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	var options = document.createElement ( 'table' );
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
@@ -2318,8 +2309,10 @@ function ParamScoreboardPlayers ( container, defaultValue, optional, from, optio
 
 ParamScoreboardPlayers.prototype = new Param ( );
 
-function ParamScoreboardTeams ( container, defaultValue, optional, from, options )
+function ParamScoreboardTeams ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	var options = document.createElement ( 'table' );
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
@@ -2329,8 +2322,10 @@ function ParamScoreboardTeams ( container, defaultValue, optional, from, options
 
 ParamScoreboardTeams.prototype = new Param ( );
 
-function ParamStatic ( container, defaultValue, optional, from, options )
+function ParamStatic ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	this.value = options.defaultValue;
 
 	container.appendChild ( document.createTextNode ( options.defaultValue ) );
@@ -2338,20 +2333,20 @@ function ParamStatic ( container, defaultValue, optional, from, options )
 
 ParamStatic.prototype = new Param ( );
 
-function ParamText ( container, defaultValue, optional, from, options )
+function ParamText ( container, from, options )
 {
-	this.value = from && from.value ? from.value : '';
-	this.optional = optional;
-	this.options = options;
+	this.init ( container, '', options );
+	
+	this.value = from && from.value || '';
 
 	var input = document.createElement ( 'input' );
-	if ( options && options.defaultValue !== undefined )
+	if ( options && options.defaultValue )
 		input.placeholder = options.defaultValue;
 	input.value = this.value;
 	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 	container.appendChild ( input );
 	
-	if ( options && options.special )
+	if ( options && options.hasSpecial )
 	{
 		var span = document.createElement ( 'span' );
 		span.className = 'input-button';
@@ -2365,14 +2360,6 @@ function ParamText ( container, defaultValue, optional, from, options )
 
 ParamText.prototype = new Param ( );
 
-ParamText.prototype.update = function ( nextHasValue )
-{
-	var required = !this.optional || nextHasValue || false;
-
-	if ( required )
-		this.input.className = this.value === '' ? 'error' : '';
-}
-
 ParamText.prototype.onSpecialClick = function ( )
 {
 	var input = this.input;
@@ -2382,11 +2369,6 @@ ParamText.prototype.onSpecialClick = function ( )
 	var selStart = input.selectionStart;
 	var selStop = input.selectionEnd || selStart;
     var value = input.value;
-
-	console.log ( selStart );
-	console.log ( selStop );
-	console.log ( value.slice(0, selStart) );
-	console.log ( value.slice(selStop) );
 
     input.value = value.slice(0, selStart) + '§' + value.slice(selStop);
 
@@ -2398,11 +2380,11 @@ ParamText.prototype.onSpecialClick = function ( )
 
 var ParamSound = ParamText;
 
-function ParamNumber ( container, defaultValue, optional, from, options )
+function ParamNumber ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	this.value = from && from.value ? from.value : '';
-	this.optional = optional;
-	this.options = options;
 
 	var input = document.createElement ( 'input' );
 	if ( options && options.isRange )
@@ -2430,7 +2412,7 @@ ParamNumber.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
-	var required = !this.optional || nextHasValue || false;
+	var required = !this.options.optional || nextHasValue || false;
 
 	if ( required && this.value === '' && this.options.defaultValue == undefined )
 		this.setError ( true );
@@ -2451,12 +2433,12 @@ ParamNumber.prototype.update = function ( nextHasValue )
 		this.setError ( true );
 }
 
-function ParamXP ( container, defaultValue, optional, from, options )
+function ParamXP ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	this.isLevels = from && from.isLevels ? from.isLevels : false;
 	this.value = from && from.value ? from.value : '';
-	this.optional = optional;
-	this.options = options;
 
 	var input = document.createElement ( 'input' );
 	input.type = 'number'
@@ -2499,7 +2481,7 @@ ParamXP.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
-	var required = !this.optional || nextHasValue || false;
+	var required = !this.options.optional || nextHasValue || false;
 
 	if ( required && this.value === '' )
 		this.setError ( true );
@@ -2773,7 +2755,7 @@ PlayerSelector.prototype.update = function ( )
 {
 	for ( var i = 0; i < this.params.length; i++ )
 	{
-		this.params[i].value.update ( );
+		this.params[i].value.update ( false );
 	}
 }
 
@@ -2806,16 +2788,16 @@ function StructureInventory ( )
 	this.structure = {
 		'Items': {
 			type: 'List',
-			children: {
+			options: {
 				type: 'Compound',
-				children: {
+				options: {
 					'Slot': 'Byte',
 					'id': 'Short',
 					'Damage': 'Short',
 					'Count': 'Byte',
 					'tag': {
 						type: 'Compound',
-						children: (new structures['Item'] ( )).structure
+						options: (new structures['Item'] ( )).structure
 					}
 				}
 			}
@@ -2838,9 +2820,9 @@ function StructureItem ( )
 	
 	this.structure['ench'] = {
 		type: 'List',
-		children: {
+		options: {
 			type: 'Compound',
-			children: {
+			options: {
 				'id': 'Enchantment',
 				'lvl': 'Short'
 			}
@@ -2849,9 +2831,9 @@ function StructureItem ( )
 	
 	this.structure['StoredEnchantments'] = {
 		type: 'List',
-		children: {
+		options: {
 			type: 'Compound',
-			children: {
+			options: {
 				'id': 'Enchantment',
 				'lvl': 'Short'
 			}
@@ -2862,11 +2844,11 @@ function StructureItem ( )
 
 	this.structure['display'] = {
 		type: 'Compound',
-		children: {
+		options: {
 			'Name': 'String',
 			'Lore': {
 				type: 'List',
-				children: 'String'
+				options: 'String'
 			}
 		}
 	}
@@ -2878,7 +2860,7 @@ function StructureItemBookAndQuill ( )
 
 	this.structure.pages = {
 		type: 'List',
-		children: 'String'
+		options: 'String'
 	};
 }
 
@@ -2903,9 +2885,9 @@ function StructureItemPotion ( )
 
 	this.structure.CustomPotionEffects = {
 		type: 'List',
-		children: {
+		options: {
 			type: 'Compound',
-			children: {
+			options: {
 				'Id': 'Byte',
 				'Amplifier': 'Byte',
 				'Duration': 'Int',
@@ -2932,11 +2914,11 @@ function StructureItemFireworkStar ( )
 		'Type': 'Byte',
 		'Colors': {
 			type: 'List',
-			children: 'Int'
+			options: 'Int'
 		},
 		'FadeColors': {
 			type: 'List',
-			children: 'Int'
+			options: 'Int'
 		}
 	};
 }
@@ -2947,7 +2929,7 @@ function StructureItemFirework ( )
 
 	this.structure.Fireworks = {
 		type: 'Compound',
-		children: {
+		options: {
 			'Flight': 'Byte',
 			'Explosions': {
 				'Flicker': 'Checkbox',
@@ -2955,11 +2937,11 @@ function StructureItemFirework ( )
 				'Type': 'Byte',
 				'Colors': {
 					type: 'List',
-					children: 'Int'
+					options: 'Int'
 				},
 				'FadeColors': {
 					type: 'List',
-					children: 'Int'
+					options: 'Int'
 				}
 			}
 		}
@@ -2973,15 +2955,18 @@ function StructureEntity ( )
 	this.structure = {
 		'Motion': {
 			type: 'List',
-			children: {
+			options: {
 				type: 'Double',
 				count: 3,
-				noneOrAll: true
+				noneOrAll: true,
+				options: {
+					defaultValue: 0
+				}
 			}
 		},
 		'Rotation': {
 			type: 'List',
-			children: {
+			options: {
 				type: 'Float',
 				count: 2,
 				noneOrAll: true
@@ -3007,7 +2992,7 @@ function StructureEntityFull ( )
 	this.structure['id'] = 'String';
 	this.structure['Pos'] = {
 		type: 'List',
-		children: {
+		options: {
 			type: 'Double',
 			count: 3
 		}
@@ -3131,12 +3116,12 @@ function StructureEntityMobVillager ( )
 	this.structure['Riches'] = 'Int'
 	this.structure['Offers'] = {
 		type: 'Compound',
-		children: {
+		options: {
 			'Recipes': {
 				type: 'List',
-				children: {
+				options: {
 					type: 'Compound',
-					children: {
+					options: {
 						'maxUses': 'Int',
 						'uses': 'Int',
 						/*'buy': {
@@ -3197,7 +3182,7 @@ function StructureEntityProjectileFireballs ( )
 	this.structure = (new structures['EntityProjectileGeneric'] ( )).structure;
 	this.structure['direction'] = {
 		type: 'List',
-		children: 'Double'
+		options: 'Double'
 	}
 }
 
@@ -3329,48 +3314,30 @@ function Tag ( )
 {
 }
 
-Tag.prototype.createTag = function ( container, name, type, children, optional, from )
+Tag.prototype.init = function ( container, description, options )
 {
-	var row = document.createElement ( 'tr' );
-
-	var cell = document.createElement ( 'th' );
-	cell.appendChild ( document.createTextNode ( name ) );
-	row.appendChild ( cell );
-
-	var cell = document.createElement ( 'td' );
-	console.log ( 'Tag'+type );
-	var value = new tags[type] ( cell, children, optional, from );
-	row.appendChild ( cell );
-
-	container.appendChild ( row );
-
-	if ( !this.tags )
-		this.tags = {};
-
-	this.tags[name] = {
-		value: value,
-		container: row
-	}
-}
-
-Tag.prototype.createTable = function ( container, remove )
-{
-	var table = document.createElement ( 'table' );
-	table.className = 'mc-tag-options';
-	container.appendChild ( table );
-
-	return table;
+	var defaultOptions = {
+		optional: true
+	};
+	
+	options = mergeObjects ( options, defaultOptions );
+	
+	this.container = container
+	
+	this.description = description
+	
+	this.options = options;
 }
 
 Tag.prototype.onRemoveClick = onRemoveClick;
 
-Tag.prototype.update = function ( )
+Tag.prototype.update = function ( required )
 {
 	if ( this.tags )
 	{
 		for ( var tag in this.tags )
 		{
-			this.tags[tag].value.update ( );
+			this.tags[tag].value.update ( required );
 		}
 	}
 
@@ -3379,14 +3346,14 @@ Tag.prototype.update = function ( )
 		for ( var i = 0; i < this.customs.length; i++ )
 		{
 			if ( this.customs[i].value )
-				this.customs[i].value.update ( );
+				this.customs[i].value.update ( required );
 		}
 	}
 
-	this.tag && this.tag.update ( );
+	this.tag && this.tag.update ( required );
 }
 
-Tag.prototype.toString = function ( )
+Tag.prototype.toString = function ( required )
 {
 	if ( this.tags || this.customs )
 	{
@@ -3451,16 +3418,19 @@ Tag.prototype.toString = function ( )
 		return output;
 	}
 
-	return ( this.tag && this.tag.toString ( ) ) || '';
+	return ( this.tag && this.tag.toString ( required ) ) || '';
 }
 
-function TagCompound ( container, structure, optional, from )
+function TagCompound ( container, from, options )
 {
+	this.init ( container, '', options );
+	
 	this.table = this.createTable ( container );
+	
+	var structure = options.structure;
 	
 	if ( typeof structure == 'string' )
 	{
-		console.log ( 'Structure' + structure );
 		structure = (new structures[structure]).structure;
 	}
 
@@ -3470,32 +3440,54 @@ function TagCompound ( container, structure, optional, from )
 		{
 			var tag = structure[name];
 			if ( typeof tag == 'string' )
-				this.createTag ( this.table, name, tag, null, true, from && from.tags && from.tags[name] && from.tags[name].value || null );
+				this.createTag ( this.table, name, tag, from && from.tags && from.tags[name] && from.tags[name].value || null, { optional: true } );
 			else
-				this.createTag ( this.table, name, tag.type, tag.children || null, tag.optional || true, from && from.tags && from.tags[name] && from.tags[name].value || null );
+				this.createTag ( this.table, name, tag.type, from && from.tags && from.tags[name] && from.tags[name].value || null, tag.options );
 		}
 	}
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Tag' ) );
-	button.addEventListener ( 'click', ( function ( tagCompound ) { return function ( e ) { tagCompound.onAddButtonClick ( e ) } } ) ( this ) );
+	button.addEventListener ( 'click', ( function ( tagCompound ) { return function ( e ) { tagCompound.onAddClick ( e ) } } ) ( this ) );
 	container.appendChild ( button );
 }
 
 TagCompound.prototype = new Tag ( );
 
-TagCompound.prototype.onAddButtonClick = function ( e )
+TagCompound.prototype.createTag = function ( container, name, type, from, options )
 {
-	e = e || window.event;
-	var target = e.target || e.srcElement;
+	var row = document.createElement ( 'tr' );
 
-	if ( e.preventDefault )
-		e.preventDefault ( );
+	var cell = document.createElement ( 'th' );
+	cell.appendChild ( document.createTextNode ( name ) );
+	row.appendChild ( cell );
 
-	this.addItem ( );
+	var cell = document.createElement ( 'td' );
+	console.log ( 'Tag'+type );
+	var value = new tags[type] ( cell, from, options );
+	row.appendChild ( cell );
 
-	return false;
+	container.appendChild ( row );
+
+	if ( !this.tags )
+		this.tags = {};
+
+	this.tags[name] = {
+		value: value,
+		container: row
+	}
 }
+
+TagCompound.prototype.createTable = function ( container, remove )
+{
+	var table = document.createElement ( 'table' );
+	table.className = 'mc-tag-options';
+	container.appendChild ( table );
+
+	return table;
+}
+
+TagCompound.prototype.onAddClick = onAddClick
 
 TagCompound.prototype.createCustomTag = function ( container )
 {
@@ -3541,31 +3533,39 @@ TagCompound.prototype.addItem = function ( )
 	updateCommand ( );
 }
 
-function TagList ( container, structure, optional, from )
+function TagList ( container, from, options )
 {
-	this.type = structure.type || structure;
+	var defaultOptions = {
+		type: options,
+		count: '*',
+		noneOrAll: false
+	}
+	options = mergeObjects ( options, defaultOptions );
+	
+	this.init ( container, '', options )
+	/*this.type = structure.type || structure;
 	this.children = structure.children || null;
 	this.count = structure.count || '*';
 	this.noneOrAll = structure.noneOrAll || false;
-	this.container = container;
+	this.container = container;*/
 	this.tags = [];
-
+	
 	this.div = document.createElement ( 'div' );
 	container.appendChild ( this.div );
 	
-	if ( this.count == '*' )
+	if ( options.count == '*' )
 	{
 		var button = document.createElement ( 'button' );
 		button.appendChild ( document.createTextNode ( 'Add List Item' ) );
-		button.addEventListener ( 'click', ( function ( tagList ) { return function ( e ) { tagList.onAddButtonClick ( e ) } } ) ( this ) );
+		button.addEventListener ( 'click', ( function ( tagList ) { return function ( e ) { tagList.onAddClick ( e ) } } ) ( this ) );
 		container.appendChild ( button );
 	}
 	
 	if ( from && from.type == this.type )
 	{
 		var count = from.tags.length;
-		if ( this.count !== '*' && count > this.count )
-			count = this.count
+		if ( options.count !== '*' && count > options.count )
+			count = options.count
 			
 		for ( var i = 0; i < count; i++ )
 		{
@@ -3574,9 +3574,9 @@ function TagList ( container, structure, optional, from )
 		//tags
 	}
 	
-	if ( this.count !== '*' )
+	if ( options.count !== '*' )
 	{
-		while ( this.tags.length < this.count )
+		while ( this.tags.length < options.count )
 			this.addItem ( );
 	}
 }
@@ -3599,8 +3599,8 @@ TagList.prototype.addItem = function ( from )
 
 	this.div.appendChild ( div );
 
-	console.log ( 'Tag' + this.type );
-	var value = new tags[this.type] ( div, this.children, true, from )
+	console.log ( 'Tag' + this.options.type );
+	var value = new tags[this.options.type] ( div, from, this.options.options )
 
 	this.tags.push ( {
 		value: value,
@@ -3610,13 +3610,13 @@ TagList.prototype.addItem = function ( from )
 	updateCommand ( );
 }
 
-Tag.prototype.update = function ( )
+TagList.prototype.update = function ( )
 {
 	var required = false
 	
 	if ( this.tags )
 	{
-		if ( this.noneOrAll )
+		if ( this.options.noneOrAll )
 		{
 			for ( var tag in this.tags )
 			{
@@ -3630,34 +3630,61 @@ Tag.prototype.update = function ( )
 	
 		for ( var tag in this.tags )
 		{
-			this.tags[tag].value.update ( );
+			this.tags[tag].value.update ( required );
 		}
 	}
 }
 
-TagList.prototype.onAddButtonClick = function ( e )
+TagList.prototype.toString = function ( )
 {
-	e = e || window.event;
-	var target = e.target || e.srcElement;
+	var required = false
+	
+	if ( this.tags )
+	{
+		if ( this.options.noneOrAll )
+		{
+			for ( var tag in this.tags )
+			{
+				if ( this.tags[tag].value.toString ( ) !== '' )
+				{
+					required = true
+					break;
+				}
+			}
+		}
+		
+		var output = [];
 
-	if ( e.preventDefault )
-		e.preventDefault ( );
+		for ( var i = 0; i < this.tags.length; i++ )
+		{
+			var value = this.tags[i].value.toString ( required );
+			if ( value !== '' )
+				output.push ( value )
+		}
 
-	this.addItem ( );
-
-	return false;
+		if ( output.length )
+			return '[' + output.join(',') + ']';
+	}
+	
+	return '';
 }
 
-function TagFloat ( container, structure, optional, from )
+TagList.prototype.onAddClick = onAddClick;
+
+function TagFloat ( container, from, options )
 {
-	this.tag = new ParamNumber ( container, '', optional, from && from.tag, { isFloat: true } );
+	this.init ( container, '', options );
+	
+	this.options.isFloat = true;
+	
+	this.tag = new params['Number'] ( container, from && from.tag, this.options );
 }
 
 TagFloat.prototype = new Tag ( );
 
-TagFloat.prototype.toString = function ( )
+TagFloat.prototype.toString = function ( required )
 {
-	var value = this.tag.toString ( );
+	var value = this.tag.toString ( required );
 	if ( !isNaN ( parseFloat ( value ) ) )
 	{
 		value = parseFloat ( value ).toString ( )
@@ -3668,16 +3695,21 @@ TagFloat.prototype.toString = function ( )
 	return value;
 }
 
-function TagShort ( container, structure, optional, from )
+function TagShort ( container, from, options )
 {
-	this.tag = new ParamNumber ( container, '', optional, from && from.tag );
+	this.init ( container, '', options );
+	this.tag = new params['Number'] ( container, from && from.tag, this.options );
 }
 
 TagShort.prototype = new Tag ( );
 
-function TagString ( container, structure, optional, form )
+function TagString ( container, from, options )
 {
-	this.tag = new ParamText ( container, '', optional, form && form.tag, { special: true } );
+	this.init ( container, '', options );
+	
+	this.options.hasSpecial = true;
+	
+	this.tag = new params['Text'] ( container, form && form.tag, this.options );
 }
 
 TagString.prototype = new Tag ( );
@@ -3691,32 +3723,38 @@ TagString.prototype.toString = function ( )
 	return value;
 }
 
-function TagBoolean ( container, structure, optional, from )
+function TagBoolean ( container, from, options )
 {
-	this.tag = new ParamBoolean ( container, '', optional, from && from.tag, { numberOutput: true } );
+	this.init ( container, '', options );
+	
+	this.options.numberOutput = true;
+	
+	this.tag = new params['Boolean'] ( container, from && from.tag, this.options );
 }
 
 TagBoolean.prototype = new Tag ( );
 
-function TagEnchantment ( container, structure, optional, from )
+function TagEnchantment ( container, from, options )
 {
-	this.tag = new ParamEnchantment ( container, '', true, from && from.tag );
+	this.init ( container, '', options );
+	this.tag = new params['Enchantment'] ( container, from && from.tag, this.options );
 }
 
 TagEnchantment.prototype = new Tag ( );
 
-function TagEntity ( container, structure, optional, from )
+function TagEntity ( container, from, options )
 {
-	this.selector = new ParamEntity ( container, '', true, from && from.selector );
-	this.id = new ParamText ( container, '', true, from && from.id );
+	this.init ( container, '', options );
+	
+	this.selector = new params['Entity'] ( container, from && from.selector, { optional: this.options.optional } );
+	this.id = new params['Text'] ( container, from && from.id, { optional: this.options.optional } );
 	
 	var div = document.createElement ( 'div' )
 	container.appendChild ( div )
 	
 	this.container = div;
 	
-	this.tag = new ParamDataTag ( div, {}, true, from && from.tag );
-	console.log ( this.tag );
+	this.tag = new params['DataTag'] ( div, from && from.tag, { optional: true} );
 }
 
 TagEntity.prototype = new Tag ( );
@@ -3751,7 +3789,7 @@ TagEntity.prototype.update = function ( )
 		if ( typeof entity !== 'string' && entity.id == entityName )
 		{
 			var structure = entity.structure || {}
-			console.log ( this.tag.type );
+			
 			if ( structure != this.tag.type )
 				this.tag.updateType ( structure )
 			break
@@ -3763,8 +3801,9 @@ TagEntity.prototype.update = function ( )
 	this.tag.update ( );
 }
 
-function TagReplace ( container, structure, optional, from )
+function TagReplace ( container, from, options )
 {
+	this.init ( container, '', options );
 	this.tag = null;
 	this.name = structure.name || 'Item';
 	this.structure = structure.structure || {};
@@ -3803,7 +3842,7 @@ TagReplace.prototype.addItem = function ( from )
 	if ( this.button )
 		this.button.parentNode.removeChild ( this.button )
 		
-	this.tag = new TagCompound ( this.container, this.structure, this.optional, from );
+	this.tag = new tags['Compound'] ( this.container, this.structure, this.optional, from );
 }
 
 function TagSelector ( container )
@@ -4003,6 +4042,7 @@ params = {
 	'Achievement': ParamAchievement,
 	'Boolean': ParamBoolean,
 	'Block': ParamBlock,
+	'CommandSelector': ParamCommandSelector,
 	'DataTag': ParamDataTag,
 	'Enchantment': ParamEnchantment,
 	'Entity': ParamEntity,

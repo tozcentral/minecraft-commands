@@ -1566,7 +1566,7 @@ function ParamEntity ( container, defaultValue, optional, from, options )
 		else
 		{
 			option = document.createElement ( 'option' );
-			option.selected = ( entity.id == ( this.value || options.defaultValue ) )
+			option.selected = ( entity.id == ( this.value || defaultValue ) )
 			option.value = entity.id;
 			option.appendChild ( document.createTextNode ( entity.name ) );
 			optionParent.appendChild ( option );
@@ -1693,7 +1693,7 @@ function ParamList ( container, defaultValue, optional, from, options )
 	for ( var i = 0; i < options.items.length; i++ )
 	{
 		option = document.createElement ( 'option' );
-		option.selected = ( options.items[i] == ( this.value || options.defaultValue ) )
+		option.selected = ( options.items[i] == ( this.value || defaultValue ) )
 		option.appendChild ( document.createTextNode ( options.items[i] ) );
 		select.appendChild ( option );
 	}
@@ -1857,7 +1857,7 @@ function ParamPos ( container, defaultValue, optional, from, options )
 	}
 	if ( options && options.isFloat )
 		input.step = "any";
-	if ( options && options.defaultValue !== undefined )
+	if ( defaultValue !== undefined )
 		input.placeholder = options.defaultValue;
 	input.value = this.value;
 	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
@@ -2971,14 +2971,6 @@ function StructureItemFirework ( )
 function StructureEntity ( )
 {
 	this.structure = {
-		//'id': 'String',
-		/*'Pos': {
-			type: 'List',
-			children: {
-				type: 'Double',
-				count: 3
-			}
-		},*/
 		'Motion': {
 			type: 'List',
 			children: {
@@ -3004,20 +2996,34 @@ function StructureEntity ( )
 		'PortalCooldown': 'Int',
 		'UUIDMost': 'Long',
 		'UUIDLeast': 'Long',
-		//'Riding': 'Riding'
+		'Riding': 'Entity'
 	};
+}
+
+function StructureEntityFull ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure;
+	
+	this.structure['id'] = 'String';
+	this.structure['Pos'] = {
+		type: 'List',
+		children: {
+			type: 'Double',
+			count: 3
+		}
+	}
 }
 
 /* Mob Entity Structures */
 
-function StructureEntityMobGeneric ( )
+function StructureEntityMob ( )
 {
 	this.structure = (new structures['Entity'] ( )).structure;
 }
 
 function StructureEntityMobBreedable ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['InLove'] = 'Int'
 	this.structure['Age'] = 'Int'
 }
@@ -3031,13 +3037,13 @@ function StructureEntityMobOwnable ( )
 
 function StructureEntityMobBat ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['BatFlags'] = 'Byte'
 }
 
 function StructureEntityMobCreeper ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['powered'] = 'Boolean'
 	this.structure['ExplosionRadius'] = 'Byte'
 	this.structure['Fuse'] = 'Short'
@@ -3046,7 +3052,7 @@ function StructureEntityMobCreeper ( )
 
 function StructureEntityMobEnderman ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['carried'] = 'Short'
 	this.structure['carriedData'] = 'Short'
 }
@@ -3070,7 +3076,7 @@ function StructureEntityMobHorse ( )
 
 function StructureEntityMobGhast ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['ExplosionPower'] = 'Int'
 }
 
@@ -3095,19 +3101,19 @@ function StructureEntityMobSheep ( )
 
 function StructureEntityMobSkeleton ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['SkeletonType'] = 'Byte'
 }
 
 function StructureEntityMobSlime ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['Size'] = 'Byte'
 }
 
 function StructureEntityMobWitherBoss ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['Invul'] = 'Int'
 }
 
@@ -3120,7 +3126,7 @@ function StructureEntityMobWolf ( )
 
 function StructureEntityMobVillager ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['Profession'] = 'Int'
 	this.structure['Riches'] = 'Int'
 	this.structure['Offers'] = {
@@ -3148,13 +3154,13 @@ function StructureEntityMobVillager ( )
 
 function StructureEntityMobVillagerGolem ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['PlayerCreated'] = 'Boolean'
 }
 
 function StructureEntityMobZombie ( )
 {
-	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure = (new structures['EntityMob'] ( )).structure;
 	this.structure['IsVillager'] = 'Boolean'
 	this.structure['IsBaby'] = 'Boolean'
 	this.structure['ConversionTime'] = 'Int'
@@ -3699,6 +3705,107 @@ function TagEnchantment ( container, structure, optional, from )
 
 TagEnchantment.prototype = new Tag ( );
 
+function TagEntity ( container, structure, optional, from )
+{
+	this.selector = new ParamEntity ( container, '', true, from && from.selector );
+	this.id = new ParamText ( container, '', true, from && from.id );
+	
+	var div = document.createElement ( 'div' )
+	container.appendChild ( div )
+	
+	this.container = div;
+	
+	this.tag = new ParamDataTag ( div, {}, true, from && from.tag );
+	console.log ( this.tag );
+}
+
+TagEntity.prototype = new Tag ( );
+
+TagEntity.prototype.update = function ( )
+{
+	var entityName = this.selector.value;
+	
+	if ( entityName === 'custom' )
+	{
+		this.id.input.style.display = '';
+	}
+	else
+	{
+		this.id.setValue ( entityName );
+		this.id.input.style.display = 'none';
+	}
+	
+	entityName = this.id.value;
+	if ( entityName == '' )
+		this.container.style.display = 'none';
+	else
+		this.container.style.display = '';
+	
+	
+	var entity;
+	
+	for ( var i = 0; i < entities.length; i++ )
+	{
+		entity = entities[i];
+		
+		if ( typeof entity !== 'string' && entity.id == entityName )
+		{
+			var structure = entity.structure || {}
+			console.log ( this.tag.type );
+			if ( structure != this.tag.type )
+				this.tag.updateType ( structure )
+			break
+		}
+	}
+	
+	this.selector.update ( );
+	this.id.update ( );
+	this.tag.update ( );
+}
+
+function TagReplace ( container, structure, optional, from )
+{
+	this.tag = null;
+	this.name = structure.name || 'Item';
+	this.structure = structure.structure || {};
+	this.optional = optional;
+	this.container = container;
+	
+	if ( from && from.tag )
+		this.addItem ( from.tag );
+	else
+	{
+		var button = document.createElement ( 'button' );
+		button.appendChild ( document.createTextNode ( 'Add ' + this.name ) );
+		button.addEventListener ( 'click', ( function ( tag ) { return function ( e ) { tag.onAddButtonClick ( e ) } } ) ( this ) );
+		this.button = button;
+		container.appendChild ( button );
+	}
+}
+
+TagReplace.prototype = new Tag ( );
+
+TagReplace.prototype.onAddButtonClick = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+
+	if ( e.preventDefault )
+		e.preventDefault ( );
+
+	this.addItem ( );
+
+	return false;
+}
+
+TagReplace.prototype.addItem = function ( from )
+{
+	if ( this.button )
+		this.button.parentNode.removeChild ( this.button )
+		
+	this.tag = new TagCompound ( this.container, this.structure, this.optional, from );
+}
+
 function TagSelector ( container )
 {
 	this.tag = null;
@@ -3929,6 +4036,8 @@ tags = {
 	
 	'Boolean': TagBoolean,
 	'Enchantment': TagEnchantment,
+	'Entity': TagEntity,
+	'Replace': TagReplace,
 	'RGB': TagShort
 }
 
@@ -3944,8 +4053,9 @@ structures = {
 	'ItemColourable': StructureItemColourable,
 	
 	'Entity': StructureEntity,
+	'EntityFull': StructureEntityFull,
 	
-	'EntityMobGeneric': StructureEntityMobGeneric,
+	'EntityMob': StructureEntityMob,
 	'EntityMobBreedable': StructureEntityMobBreedable,
 	
 	'EntityMobBat': StructureEntityMobBat,
@@ -4793,7 +4903,7 @@ entities = [
 	{
 		id: 'Squid',
 		name: 'Squid',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'Villager',
@@ -4815,12 +4925,12 @@ entities = [
 	{
 		id: 'Blaze',
 		name: 'Blaze',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'CaveSpider',
 		name: 'Cave Spider',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'Creeper',
@@ -4835,7 +4945,7 @@ entities = [
 	{
 		id: 'Giant',
 		name: 'Giant',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'LavaSlime',
@@ -4845,7 +4955,7 @@ entities = [
 	{
 		id: 'Silverfish',
 		name: 'Silverfish',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'Skeleton',
@@ -4860,12 +4970,12 @@ entities = [
 	{
 		id: 'Spider',
 		name: 'Spider',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'Witch',
 		name: 'Witch',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'Zombie',
@@ -4886,13 +4996,13 @@ entities = [
 	{
 		id: 'SnowMan',
 		name: 'Snow Golem',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	'Boss Mobs',
 	{
 		id: 'EnderDragon',
 		name: 'Ender Dragon',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'WitherBoss',
@@ -4944,32 +5054,32 @@ entities = [
 	{
 		id: 'MinecartRidable',
 		name: 'Minecart',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'MinecartHopper',
 		name: 'Hopper Minecart',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'MinecartFurnace',
 		name: 'Powered Minecart',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'MinecartSpawner',
 		name: 'Spawner Minecart',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'MinecraftChest',
 		name: 'Storage Minecart',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'MinecartTNT',
 		name: 'TNT Minecart',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	'Other',
 	{
@@ -4980,27 +5090,27 @@ entities = [
 	{
 		id: 'EnderCrystal',
 		name: 'Ender Crystal',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'EyeOfEnderSignal',
 		name: 'Eye Of Ender',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'FallingSand',
 		name: 'Falling Sand',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'FireworksRocketEntity',
 		name: 'Firework',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'PrimedTnt',
 		name: 'Primed TNT',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'Item',
@@ -5010,33 +5120,33 @@ entities = [
 	{
 		id: 'ItemFrame',
 		name: 'Item Frame',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'LeashKnot',
 		name: 'Leash Knot',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'Painting',
 		name: 'Painting',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'XPOrb',
 		name: 'XP Orb',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	/*
 	{
 		id: 'Mob',
 		name: 'Mob',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},
 	{
 		id: 'Monster',
 		name: 'Monster',
-		structure: 'EntityMobGeneric'
+		structure: 'EntityMob'
 	},*/
 ]
 

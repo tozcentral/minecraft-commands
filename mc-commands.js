@@ -3,6 +3,7 @@
 var commands = {};
 var params = {};
 var tags = {};
+var structures = {}
 var blocks = [];
 var items = [];
 var entities = [];
@@ -116,7 +117,7 @@ CommandSelector.prototype.updateCommand = function ( command )
 	if ( typeof commands[command] == 'function' )
 		this.command = new commands[command] ( options, this.command );
 	else
-		this.command = new GenericCommand ( options, command, this.command );
+		this.command = new commands['Generic'] ( options, command, this.command );
 }
 
 CommandSelector.prototype.createHTML = function ( container )
@@ -291,7 +292,7 @@ Command.prototype.groupRadioFirst = function ( name, index )
 	return null;
 }
 
-Command.prototype.createParam = function ( container, name, Type, from, options )
+Command.prototype.createParam = function ( container, name, type, from, options )
 {
 	options = options || {};
 	if ( options.completelyOptional )
@@ -323,7 +324,8 @@ Command.prototype.createParam = function ( container, name, Type, from, options 
 		cell.appendChild ( radiobox )
 	}
 	
-	var value = new Type ( cell, options.defaultValue, options.optional, from && from[name] && from[name].value, options );
+	console.log ( 'Param' + type );
+	var value = new params[type] ( cell, options.defaultValue, options.optional, from && from[name] && from[name].value, options );
 
 	if ( options && options.remove )
 	{
@@ -379,7 +381,7 @@ function GenericCommand ( container, name, from )
 	{
 		var param = params[i];
 
-		this.createParam ( container, param.name, param.type || ParamText, from, {defaultValue: param.defaultValue || '', ignoreIfHidden: param.ignoreIfHidden || true, optinal: param.optinal || false} );
+		this.createParam ( container, param.name, param.type || 'Text', from, {defaultValue: param.defaultValue || '', ignoreIfHidden: param.ignoreIfHidden || true, optinal: param.optinal || false} );
 	}
 }
 
@@ -394,9 +396,9 @@ function CommandAchievement ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'give', ParamStatic, from, { defaultValue: 'give' }  );
-	this.createParam ( container, 'achievement or statistic', ParamAchievement, from );
-	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
+	this.createParam ( container, 'give', 'Static', from, { defaultValue: 'give' }  );
+	this.createParam ( container, 'achievement or statistic', 'Achievement', from );
+	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
 }
 
 CommandAchievement.prototype = new Command ( );
@@ -410,10 +412,10 @@ function CommandClear ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
-	this.createParam ( container, 'item metadata', ParamItem, from, { optional: true, ignoreValue: true } ); // New ParamItem, list of all items + custom
-	this.createParam ( container, 'item', ParamNumber, from, { optional: true, ignoreIfHidden: false, min: 1 } );
-	this.createParam ( container, 'metadata', ParamNumber, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0 } );
+	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
+	this.createParam ( container, 'item metadata', 'Item', from, { optional: true, ignoreValue: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item', 'Number', from, { optional: true, ignoreIfHidden: false, min: 1 } );
+	this.createParam ( container, 'metadata', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0 } );
 }
 
 CommandClear.prototype = new Command ( );
@@ -451,7 +453,7 @@ function CommandDebug ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'start | stop', ParamList, from, { items: ['start', 'stop'] } );
+	this.createParam ( container, 'start | stop', 'List', from, { items: ['start', 'stop'] } );
 }
 
 CommandDebug.prototype = new Command ( );
@@ -465,7 +467,7 @@ function CommandDefaultGamemode ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'survival | creative | adventure', ParamList, from, { items: ['survival', 'creative', 'adventure'] } );
+	this.createParam ( container, 'survival | creative | adventure', 'List', from, { items: ['survival', 'creative', 'adventure'] } );
 }
 
 CommandDefaultGamemode.prototype = new Command ( );
@@ -479,7 +481,7 @@ function CommandDifficulty ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'peaceful | easy | normal | hard', ParamList, from, { items: ['peaceful', 'easy', 'normal', 'hard'] } );
+	this.createParam ( container, 'peaceful | easy | normal | hard', 'List', from, { items: ['peaceful', 'easy', 'normal', 'hard'] } );
 }
 
 CommandDifficulty.prototype = new Command ( );
@@ -493,10 +495,10 @@ function CommandEffect ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'effect', ParamPotion, from );
-	this.createParam ( container, 'seconds', ParamNumber, from, { optional: true, ignoreIfHidden: true, min:0, max:1000000 } );
-	this.createParam ( container, 'amplifier', ParamNumber, from, { optional: true, ignoreIfHidden: true, min:0, max:255 } );
+	this.createParam ( container, 'player', 'PlayerSelector', from );
+	this.createParam ( container, 'effect', 'Potion', from );
+	this.createParam ( container, 'seconds', 'Number', from, { optional: true, ignoreIfHidden: true, min:0, max:1000000 } );
+	this.createParam ( container, 'amplifier', 'Number', from, { optional: true, ignoreIfHidden: true, min:0, max:255 } );
 }
 
 CommandEffect.prototype = new Command ( );
@@ -552,9 +554,9 @@ function CommandEnchant ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'enchantment', ParamEnchantment, from );
-	this.createParam ( container, 'level', ParamNumber, from, { optional: true, min:1, max:5 } );
+	this.createParam ( container, 'player', 'PlayerSelector', from );
+	this.createParam ( container, 'enchantment', 'Enchantment', from );
+	this.createParam ( container, 'level', 'Number', from, { optional: true, min:1, max:5 } );
 }
 
 CommandEnchant.prototype = new Command ( );
@@ -611,8 +613,8 @@ function CommandGamemode ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'survival | creative | adventure', ParamList, from, { items: ['survival', 'creative', 'adventure'] } );
-	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
+	this.createParam ( container, 'survival | creative | adventure', 'List', from, { items: ['survival', 'creative', 'adventure'] } );
+	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
 }
 
 CommandGamemode.prototype = new Command ( );
@@ -626,8 +628,9 @@ function CommandGameRule ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'rulename', ParamList, from, { items: ['commandBlockOutput', 'doFireTick', 'doMobLoot', 'doMobSpawning', 'doTileDrops', 'keepInventory', 'mobGriefing', 'naturalRegeneration', 'doDaylightCycle'] } );
-	this.createParam ( container, 'true | false', ParamList, from, { items: ['true', 'false'] } );
+	this.createParam ( container, 'rulename', 'List', from, { items: ['commandBlockOutput', 'doFireTick', 'doMobLoot', 'doMobSpawning', 'doTileDrops', 'keepInventory', 'mobGriefing', 'naturalRegeneration', 'doDaylightCycle'] } );
+	//this.createParam ( container, 'true | false', 'List', from, { items: ['true', 'false'] } );
+	this.createParam ( container, 'true | false', 'Boolean', from );
 }
 
 CommandGameRule.prototype = new Command ( );
@@ -641,12 +644,12 @@ function CommandGive ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'item metadata', ParamItem, from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
-	this.createParam ( container, 'item', ParamNumber, from, { ignoreIfHidden: false, min:1 } );
-	this.createParam ( container, 'amount', ParamNumber, from, { optional: true, min: 0, max: 64 } );
-	this.createParam ( container, 'metadata', ParamNumber, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
-	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true, type: 'ItemGeneric' } );
+	this.createParam ( container, 'player', 'PlayerSelector', from );
+	this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item', 'Number', from, { ignoreIfHidden: false, min:1 } );
+	this.createParam ( container, 'amount', 'Number', from, { optional: true, min: 0, max: 64 } );
+	this.createParam ( container, 'metadata', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
+	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Item' } );
 }
 
 CommandGive.prototype = new Command ( );
@@ -671,6 +674,22 @@ CommandGive.prototype.update = function ( )
 			this.params.metadata.container.style.display = 'none';
 		}
 	}
+	
+	var itemId = this.params.item.value.value;
+	var item;
+	
+	for ( var i = 0; i < items.length; i++ )
+	{
+		item = items[i];
+		
+		if ( item.id == itemId )
+		{
+			var structure = item.structure || 'Item'
+			if ( structure != this.params.dataTag.value.type )
+				this.params.dataTag.value.updateType ( structure )
+			break
+		}
+	}
 
 	this.updateLoop ( );
 }
@@ -684,7 +703,7 @@ function CommandMe ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'actiontext', ParamText, '', true, false, from );
+	this.createParam ( container, 'actiontext', 'Text', from );
 }
 
 CommandMe.prototype = new Command ( );
@@ -698,14 +717,14 @@ function CommandPlaySound ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'sound', ParamSound, from );
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'x', ParamPos, from, { optional: true } );
-	this.createParam ( container, 'y', ParamPos, from, { optional: true, height: true } );
-	this.createParam ( container, 'z', ParamPos, from, { optional: true } );
-	this.createParam ( container, 'volume', ParamNumber, from, { optional: true, min:0.0, isFloat:true } );
-	this.createParam ( container, 'pitch', ParamNumber, from, { optional: true, min:0.0, max:2.0, isFloat:true } );
-	this.createParam ( container, 'minimumVolume', ParamNumber, from, { optional: true, min:0.0, max:1.0, isFloat:true } );
+	this.createParam ( container, 'sound', 'Sound', from );
+	this.createParam ( container, 'player', 'PlayerSelector', from );
+	this.createParam ( container, 'x', 'Pos', from, { optional: true } );
+	this.createParam ( container, 'y', 'Pos', from, { optional: true, height: true } );
+	this.createParam ( container, 'z', 'Pos', from, { optional: true } );
+	this.createParam ( container, 'volume', 'Number', from, { optional: true, min:0.0, isFloat:true } );
+	this.createParam ( container, 'pitch', 'Number', from, { optional: true, min:0.0, max:2.0, isFloat:true } );
+	this.createParam ( container, 'minimumVolume', 'Number', from, { optional: true, min:0.0, max:1.0, isFloat:true } );
 }
 
 CommandPlaySound.prototype = new Command ( );
@@ -719,7 +738,7 @@ function CommandSay ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'message', ParamText, '', true, false, from );
+	this.createParam ( container, 'message', 'Text', from );
 }
 
 CommandSay.prototype = new Command ( );
@@ -733,13 +752,13 @@ function CommandScoreBoard ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'objectives | players | teams', ParamList, from, { items: ['objectives','players','teams'] } );
+	this.createParam ( container, 'objectives | players | teams', 'List', from, { items: ['objectives','players','teams'] } );
 	this.createParam ( container, 'objectives', ParamScoreboardObjectives, from );
 	this.createParam ( container, 'players', ParamScoreboardPlayers, from );
 	this.createParam ( container, 'teams', ParamScoreboardTeams, from );
-	/*this.createParam ( container, 'list | add | remove | setdisplay', ParamList, from, { items: ['list','add','remove','setdisplay'] } );
-	this.createParam ( container, 'set | add | remove | reset | list', ParamList, from, { items: ['set','add','remove','reset','list'] } );
-	this.createParam ( container, 'list | add | remove | empty | join | leave | option', ParamList, from, { items: ['list','add','remove','empty','join','leave','option'] } );*/
+	/*this.createParam ( container, 'list | add | remove | setdisplay', 'List', from, { items: ['list','add','remove','setdisplay'] } );
+	this.createParam ( container, 'set | add | remove | reset | list', 'List', from, { items: ['set','add','remove','reset','list'] } );
+	this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'List', from, { items: ['list','add','remove','empty','join','leave','option'] } );*/
 }
 
 CommandScoreBoard.prototype = new Command ( );
@@ -753,35 +772,32 @@ function CommandSetBlock ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'x', ParamPos, from );
-	this.createParam ( container, 'y', ParamPos, from, { height: true } );
-	this.createParam ( container, 'z', ParamPos, from );
-	this.createParam ( container, 'tilename datavalue', ParamBlock, from, { ignoreValue: true } );
-	this.createParam ( container, 'tilename', ParamText, from, { ignoreIfHidden: false } );
-	this.createParam ( container, 'datavalue', ParamNumber, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
-	this.createParam ( container, 'oldblockHandling', ParamList, from, { optional: true, items: ['', 'replace','keep','destory'] } );
-	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true, type: 'BlockGeneric' } );
+	this.createParam ( container, 'x', 'Pos', from );
+	this.createParam ( container, 'y', 'Pos', from, { height: true } );
+	this.createParam ( container, 'z', 'Pos', from );
+	this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true } );
+	this.createParam ( container, 'tilename', 'Text', from, { ignoreIfHidden: false } );
+	this.createParam ( container, 'datavalue', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
+	this.createParam ( container, 'oldblockHandling', 'List', from, { optional: true, items: ['', 'replace','keep','destory'] } );
+	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Block' } );
 }
 
 CommandSetBlock.prototype = new Command ( );
 
 CommandSetBlock.prototype.update = function ( )
 {
-	if ( this.params['tilename datavalue'].value.value !== 'custom' )
-	{
-		var itemMetadata = this.params['tilename datavalue'].value.value.split ( ' ' );
-
-		this.params.tilename.value.setValue ( itemMetadata[0] || '' );
-		this.params.datavalue.value.setValue ( itemMetadata[1] || '' );
-	}
-
-	if ( this.params['tilename datavalue'].value.value == 'custom' )
+	if ( this.params['tilename datavalue'].value.value === 'custom' )
 	{
 		this.params.tilename.container.style.display = '';
 		this.params.datavalue.container.style.display = '';
 	}
 	else
 	{
+		var itemMetadata = this.params['tilename datavalue'].value.value.split ( ' ' );
+
+		this.params.tilename.value.setValue ( itemMetadata[0] || '' );
+		this.params.datavalue.value.setValue ( itemMetadata[1] || '' );
+		
 		this.params.tilename.container.style.display = 'none';
 		this.params.datavalue.container.style.display = 'none';
 	}
@@ -795,9 +811,9 @@ CommandSetBlock.prototype.update = function ( )
 		
 		if ( block.id == tilename || block.tilename == tilename )
 		{
-			var tag = block.tag || 'BlockGeneric'
-			if ( tag != this.params.dataTag.value.type )
-				this.params.dataTag.value.updateType ( tag )
+			var structure = block.structure || 'Block'
+			if ( structure != this.params.dataTag.value.type )
+				this.params.dataTag.value.updateType ( structure )
 			break
 		}
 	}
@@ -814,10 +830,10 @@ function CommandSpawnPoint ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
-	this.createParam ( container, 'x', ParamPos, from, { optional: true } );
-	this.createParam ( container, 'y', ParamPos, from, { optional: true, height: true } );
-	this.createParam ( container, 'z', ParamPos, from, { optional: true } );
+	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
+	this.createParam ( container, 'x', 'Pos', from, { optional: true } );
+	this.createParam ( container, 'y', 'Pos', from, { optional: true, height: true } );
+	this.createParam ( container, 'z', 'Pos', from, { optional: true } );
 }
 
 CommandSpawnPoint.prototype = new Command ( );
@@ -832,12 +848,13 @@ function CommandSpreadPlayers ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'x', ParamPos, from );
-	this.createParam ( container, 'z', ParamPos, from );
-	this.createParam ( container, 'spreadDistance', ParamNumber, from, {isFloat:true} );
-	this.createParam ( container, 'maxRange', ParamNumber, from );
-	this.createParam ( container, 'respectTeams', ParamList, from, { items: ['true','false'] } );
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'x', 'Pos', from );
+	this.createParam ( container, 'z', 'Pos', from );
+	this.createParam ( container, 'spreadDistance', 'Number', from, {isFloat:true} );
+	this.createParam ( container, 'maxRange', 'Number', from );
+	//this.createParam ( container, 'respectTeams', 'List', from, { items: ['true','false'] } );
+	this.createParam ( container, 'respectTeams', 'Boolean', from );
+	this.createParam ( container, 'player', 'PlayerSelector', from );
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Player' ) );
@@ -895,14 +912,47 @@ function CommandSummon ( container, from )
 
 	from = from && from.params;
 
-	/*this.createParam ( container, 'EntityName', ParamEntity, from );
-	this.createParam ( container, 'x', ParamPos, from );
-	this.createParam ( container, 'y', ParamPos, from, { height: true } );
-	this.createParam ( container, 'z', ParamPos, from );
-	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true } );*/
+	this.createParam ( container, 'Entity', 'Entity', from, { ignoreValue: true } );
+	this.createParam ( container, 'EntityName', 'Text', from, { ignoreIfHidden: false } );
+	this.createParam ( container, 'x', 'Pos', from );
+	this.createParam ( container, 'y', 'Pos', from, { height: true } );
+	this.createParam ( container, 'z', 'Pos', from );
+	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true } );
 }
 
 CommandSummon.prototype = new Command ( );
+
+CommandSummon.prototype.update = function ( )
+{
+	var entityName = this.params.Entity.value.value;
+	
+	if ( entityName === 'custom' )
+	{
+		this.params.EntityName.container.style.display = '';
+	}
+	else
+	{
+		this.params.EntityName.value.setValue ( this.params.Entity.value.value );
+		this.params.EntityName.container.style.display = 'none';
+	}
+	
+	var entity;
+	
+	for ( var i = 0; i < entities.length; i++ )
+	{
+		entity = entities[i];
+		
+		if ( typeof entity !== 'string' && entity.id == entityName )
+		{
+			var structure = entity.structure || {}
+			if ( structure != this.params.dataTag.value.type )
+				this.params.dataTag.value.updateType ( structure )
+			break
+		}
+	}
+
+	this.updateLoop ( );
+}
 
 function CommandTell ( container, from )
 {
@@ -913,8 +963,8 @@ function CommandTell ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'message', ParamText, from );
+	this.createParam ( container, 'player', 'PlayerSelector', from );
+	this.createParam ( container, 'message', 'Text', from );
 }
 
 CommandTell.prototype = new Command ( );
@@ -928,8 +978,8 @@ function CommandTellRaw ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
-	this.createParam ( container, 'rawmessage', ParamRawMessage, from, { isRoot: true, hasEvents: true } );
+	this.createParam ( container, 'player', 'PlayerSelector', from );
+	this.createParam ( container, 'rawmessage', 'RawMessage', from, { isRoot: true, hasEvents: true } );
 }
 
 CommandTellRaw.prototype = new Command ( );
@@ -943,7 +993,7 @@ function CommandTestFor ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from );
+	this.createParam ( container, 'player', 'PlayerSelector', from );
 }
 
 CommandTestFor.prototype = new Command ( );
@@ -957,34 +1007,31 @@ function CommandTestForBlock ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'x', ParamPos, from );
-	this.createParam ( container, 'y', ParamPos, from, { height: true } );
-	this.createParam ( container, 'z', ParamPos, from );
-	this.createParam ( container, 'tilename datavalue', ParamBlock, from, { ignoreValue: true } );
-	this.createParam ( container, 'tilename', ParamText, from, { ignoreIfHidden: false } );
-	this.createParam ( container, 'datavalue', ParamNumber, from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
-	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true, type: 'BlockGeneric' } );
+	this.createParam ( container, 'x', 'Pos', from );
+	this.createParam ( container, 'y', 'Pos', from, { height: true } );
+	this.createParam ( container, 'z', 'Pos', from );
+	this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true } );
+	this.createParam ( container, 'tilename', 'Text', from, { ignoreIfHidden: false } );
+	this.createParam ( container, 'datavalue', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
+	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Block' } );
 }
 
 CommandTestForBlock.prototype = new Command ( );
 
 CommandTestForBlock.prototype.update = function ( )
 {
-	if ( this.params['tilename datavalue'].value.value !== 'custom' )
-	{
-		var itemMetadata = this.params['tilename datavalue'].value.value.split ( ' ' );
-
-		this.params.tilename.value.setValue ( itemMetadata[0] || '' );
-		this.params.datavalue.value.setValue ( itemMetadata[1] || '' );
-	}
-
-	if ( this.params['tilename datavalue'].value.value == 'custom' )
+	if ( this.params['tilename datavalue'].value.value === 'custom' )
 	{
 		this.params.tilename.container.style.display = '';
 		this.params.datavalue.container.style.display = '';
 	}
 	else
 	{
+		var itemMetadata = this.params['tilename datavalue'].value.value.split ( ' ' );
+
+		this.params.tilename.value.setValue ( itemMetadata[0] || '' );
+		this.params.datavalue.value.setValue ( itemMetadata[1] || '' );
+		
 		this.params.tilename.container.style.display = 'none';
 		this.params.datavalue.container.style.display = 'none';
 	}
@@ -998,9 +1045,9 @@ CommandTestForBlock.prototype.update = function ( )
 		
 		if ( block.id == tilename || block.tilename == tilename )
 		{
-			var tag = block.tag || 'BlockGeneric'
-			if ( tag != this.params.dataTag.value.type )
-				this.params.dataTag.value.updateType ( tag )
+			var structure = block.structure || 'Block'
+			if ( structure != this.params.dataTag.value.type )
+				this.params.dataTag.value.updateType ( structure )
 			break
 		}
 	}
@@ -1017,8 +1064,8 @@ function CommandTime ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'set | add', ParamList, from, { items: ['set','add'] } );
-	this.createParam ( container, 'number', ParamNumber, from ); // Add day/night
+	this.createParam ( container, 'set | add', 'List', from, { items: ['set','add'] } );
+	this.createParam ( container, 'number', 'Number', from ); // Add day/night
 }
 
 CommandTime.prototype = new Command ( );
@@ -1045,11 +1092,11 @@ function CommandTP ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'player', ParamPlayerSelector, from, { completelyOptional: true } );
-	this.createParam ( container, 'destination player', ParamPlayerSelector, from, { group: 'dest', groupIndex: 0, groupPrefix: this.groupPrefix } );
-	this.createParam ( container, 'x', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
-	this.createParam ( container, 'y', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
-	this.createParam ( container, 'z', ParamPos, from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
+	this.createParam ( container, 'player', 'PlayerSelector', from, { completelyOptional: true } );
+	this.createParam ( container, 'destination player', 'PlayerSelector', from, { group: 'dest', groupIndex: 0, groupPrefix: this.groupPrefix } );
+	this.createParam ( container, 'x', 'Pos', from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
+	this.createParam ( container, 'y', 'Pos', from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
+	this.createParam ( container, 'z', 'Pos', from, { group: 'dest', groupIndex: 1, groupPrefix: this.groupPrefix } );
 }
 
 CommandTP.prototype = new Command ( );
@@ -1063,8 +1110,8 @@ function CommandWeather ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'clear | rain | thunder', ParamList, from, { items: ['clear','rain','thunder'] } );
-	this.createParam ( container, 'seconds', ParamNumber, from, { optional: true, min:1, max:1000000 } );
+	this.createParam ( container, 'clear | rain | thunder', 'List', from, { items: ['clear','rain','thunder'] } );
+	this.createParam ( container, 'seconds', 'Number', from, { optional: true, min:1, max:1000000 } );
 }
 
 CommandWeather.prototype = new Command ( );
@@ -1078,8 +1125,8 @@ function CommandXP ( container, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'amount', ParamXP, from );
-	this.createParam ( container, 'player', ParamPlayerSelector, from, { optional: true } );
+	this.createParam ( container, 'amount', 'XP', from );
+	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
 }
 
 CommandXP.prototype = new Command ( );
@@ -1287,6 +1334,7 @@ ParamBlock.prototype = new Param ( );
 function ParamBoolean ( container, defaultValue, optional, from, options )
 {
 	this.optional = optional
+	this.options = options
 	this.checked = from && from.value || 'false'
 	this.value = this.checked == 'true' ? 'true' : ( optional ? '' : 'false' )
 
@@ -1308,7 +1356,11 @@ ParamBoolean.prototype.onCheckboxChange = function ( e )
 	var target = e.target || e.srcElement;
 	
 	this.checked = target.checked ? 'true' : 'false'
-	this.value = this.checked == 'true' ? 'true' : ( this.optional ? '' : 'false' )
+	
+	if ( this.options && this.options.numberOutput )
+		this.value = this.checked == 'true' ? '1' : ( this.optional ? '' : '0' )
+	else
+		this.value = this.checked == 'true' ? 'true' : ( this.optional ? '' : 'false' )
 
 	updateCommand ( );
 }
@@ -1348,7 +1400,8 @@ function ParamDataTag ( container, defaultValue, optional, from, options )
 	this.tag = from && from.tag;
 	this.type = ( from && from.type ) || ( this.selector && this.selector.value ) || ( options && options.type );
 
-	this.updateType ( this.type );
+	if ( this.type )
+		this.updateType ( this.type );
 }
 
 ParamDataTag.prototype = new Param ( );
@@ -1397,11 +1450,10 @@ ParamDataTag.prototype.updateType = function ( type )
 	if ( this.selector )
 		this.selector.value = type;
 
-	console.log ( 'Tag' + type );
-	this.tag = new tags[type] ( options, this.tag );
+	this.tag = new tags['Compound'] ( options, type, this.optional, this.tag );
 }
 
-ParamDataTag.prototype.update = function ( nextHasValue )
+ParamDataTag.prototype.update = function ( )
 {
 	if ( this.tag )
 		this.tag.update ( );
@@ -1480,6 +1532,59 @@ function ParamEnchantment ( container, defaultValue, optional, from, options )
 
 ParamEnchantment.prototype = new Param ( );
 
+function ParamEntity ( container, defaultValue, optional, from, options )
+{
+	var option, entity;
+	
+	this.optional = optional;
+
+	this.value = from && from.value;
+
+	var select = document.createElement ( 'select' )
+	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+
+	if ( optional )
+	{
+		option = document.createElement ( 'option' );
+		option.value = '';
+		option.appendChild ( document.createTextNode ( 'None' ) );
+		select.appendChild ( option );
+	}
+	
+	var optionParent = select;
+
+	for ( var i = 0; i < entities.length; i++ )
+	{
+		entity = entities[i];
+		
+		if ( typeof entity === 'string' )
+		{
+			optionParent = document.createElement ( 'optgroup' );
+			optionParent.label = entity;
+			select.appendChild ( optionParent );
+		}
+		else
+		{
+			option = document.createElement ( 'option' );
+			option.selected = ( entity.id == ( this.value || options.defaultValue ) )
+			option.value = entity.id;
+			option.appendChild ( document.createTextNode ( entity.name ) );
+			optionParent.appendChild ( option );
+		}
+	}
+
+	option = document.createElement ( 'option' );
+	option.value = 'custom';
+	option.appendChild ( document.createTextNode ( 'Custom' ) );
+	select.appendChild ( option );
+
+	this.value = select.value;
+
+	container.appendChild ( select );
+}
+
+ParamEntity.prototype = new Param ( );
+
 function ParamItem ( container, defaultValue, optional, from, options )
 {
 	var option, item;
@@ -1532,10 +1637,10 @@ function ParamItemTag ( container, defaultValue, optional, from, options )
 	this.paramsOrdered = [];
 	
 	this.optional = optional;
-	this.createParam ( container, 'item metadata', ParamItem, from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
-	this.createParam ( container, 'item', ParamNumber, from, { ignoreIfHidden: false, min:1 } );
-	this.createParam ( container, 'metadata', ParamNumber, from, { ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
-	this.createParam ( container, 'dataTag', ParamDataTag, from, { optional: true, type: 'ItemGeneric' } );
+	this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item', 'Number', from, { ignoreIfHidden: false, min:1 } );
+	this.createParam ( container, 'metadata', 'Number', from, { ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
+	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Item' } );
 }
 
 ParamItemTag.prototype = new Param ( );
@@ -1886,21 +1991,21 @@ function ParamRawMessage ( container, defaultValue, optional, from, options )
 	var table = document.createElement ( 'table' );
 	container.appendChild ( table );
 	
-	this.createParam ( table, 'text', ParamText, from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true, special: true } );
-	this.createParam ( table, 'translate', ParamText, from, { group: 'text', groupIndex: 1, groupPrefix: this.groupPrefix, quote: true } );
-	this.createParam ( table, 'color', ParamText, from, { optional: true } );
-	this.createParam ( table, 'bold', ParamBoolean, from, { optional: true } );
-	this.createParam ( table, 'underlined', ParamBoolean, from, { optional: true } );
-	this.createParam ( table, 'italic', ParamBoolean, from, { optional: true } );
-	this.createParam ( table, 'strikethrough', ParamBoolean, from, { optional: true } );
-	this.createParam ( table, 'obfuscated', ParamBoolean, from, { optional: true } );
+	this.createParam ( table, 'text', 'Text', from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true, special: true } );
+	this.createParam ( table, 'translate', 'Text', from, { group: 'text', groupIndex: 1, groupPrefix: this.groupPrefix, quote: true } );
+	this.createParam ( table, 'color', 'Text', from, { optional: true } );
+	this.createParam ( table, 'bold', 'Boolean', from, { optional: true } );
+	this.createParam ( table, 'underlined', 'Boolean', from, { optional: true } );
+	this.createParam ( table, 'italic', 'Boolean', from, { optional: true } );
+	this.createParam ( table, 'strikethrough', 'Boolean', from, { optional: true } );
+	this.createParam ( table, 'obfuscated', 'Boolean', from, { optional: true } );
 	if ( options && options.hasEvents )
 	{
-		this.createParam ( table, 'clickEvent', ParamRawMessageEvent, from, { optional: true, items: ['run_command','suggest_command','open_url'] } );
-		this.createParam ( table, 'hoverEvent', ParamRawMessageEvent, from, { optional: true, items: ['show_text','show_item','show_achievement'] } );
+		this.createParam ( table, 'clickEvent', 'RawMessageEvent', from, { optional: true, items: ['run_command','suggest_command','open_url'] } );
+		this.createParam ( table, 'hoverEvent', 'RawMessageEvent', from, { optional: true, items: ['show_text','show_item','show_achievement'] } );
 	}
 	if ( options && options.isRoot )
-		this.createParam ( table, 'extra', ParamRawMessageExtras, from, { optional: true, hasEvents: options && options.hasEvents } );
+		this.createParam ( table, 'extra', 'RawMessageExtras', from, { optional: true, hasEvents: options && options.hasEvents } );
 }
 
 ParamRawMessage.prototype = new Param ( );
@@ -2067,19 +2172,19 @@ ParamRawMessageEvent.prototype.updateParam = function ( param )
 		break
 		case 'run_command':
 		case 'suggest_command':
-			this.param = new ParamCommandSelector ( optionsContainer, null, false, this.param, { quote: true } );
+			this.param = new params['CommandSelector'] ( optionsContainer, null, false, this.param, { quote: true } );
 		break
 		case 'open_url':
-			this.param = new ParamText ( optionsContainer, null, false, this.param, { quote: true } );
+			this.param = new params['Text'] ( optionsContainer, null, false, this.param, { quote: true } );
 		break
 		case 'show_text':
-			this.param = new ParamRawMessage ( optionsContainer, null, false, this.param );
+			this.param = new params['RawMessage'] ( optionsContainer, null, false, this.param );
 		break
 		case 'show_item':
-			this.param = new ParamItemTag ( optionsContainer, null, false, this.param );
+			this.param = new params['ItemTag'] ( optionsContainer, null, false, this.param );
 		break
 		case 'show_achievement':
-			this.param = new ParamAchievement ( optionsContainer, null, false, this.param );
+			this.param = new params['Achievement'] ( optionsContainer, null, false, this.param );
 		break
 	}
 }
@@ -2138,7 +2243,8 @@ ParamRawMessageExtras.prototype.addItem = function ( )
 
 	this.table.appendChild ( row );
 
-	var value = new ParamRawMessage ( cell, '', true, null, { hasEvents: this.options && this.options.hasEvents } );
+	console.log ( 'ParamRawMessage' );
+	var value = new params['RawMessage'] ( cell, '', true, null, { hasEvents: this.options && this.options.hasEvents } );
 
 	this.items.push ( {
 		value: value,
@@ -2196,7 +2302,7 @@ function ParamScoreboardObjectives ( container, defaultValue, optional, from, op
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
 
-	this.createParam ( container, 'list | add | remove | setdisplay', ParamList, from, { items: ['list','add','remove','setdisplay'] } );
+	this.createParam ( container, 'list | add | remove | setdisplay', 'List', from, { items: ['list','add','remove','setdisplay'] } );
 }
 
 ParamScoreboardObjectives.prototype = new Param ( );
@@ -2207,7 +2313,7 @@ function ParamScoreboardPlayers ( container, defaultValue, optional, from, optio
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
 
-	this.createParam ( container, 'set | add | remove | reset | list', ParamList, from, { items: ['set','add','remove','reset','list'] } );
+	this.createParam ( container, 'set | add | remove | reset | list', 'List', from, { items: ['set','add','remove','reset','list'] } );
 }
 
 ParamScoreboardPlayers.prototype = new Param ( );
@@ -2218,7 +2324,7 @@ function ParamScoreboardTeams ( container, defaultValue, optional, from, options
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
 
-	this.createParam ( container, 'list | add | remove | empty | join | leave | option', ParamList, from, { items: ['list','add','remove','empty','join','leave','option'] } );
+	this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'List', from, { items: ['list','add','remove','empty','join','leave','option'] } );
 }
 
 ParamScoreboardTeams.prototype = new Param ( );
@@ -2422,7 +2528,8 @@ function PlayerUsername ( container, optional, from )
 	row.appendChild ( title );
 
 	var cell = document.createElement ( 'td' );
-	this.param = new ParamText ( cell, '', optional, from && from.param );
+	console.log ( 'ParamText' );
+	this.param = new params['Text'] ( cell, '', optional, from && from.param );
 	row.appendChild ( cell );
 	
 	if ( from && from instanceof PlayerSelector )
@@ -2449,17 +2556,17 @@ function PlayerSelector ( container, type, optional, from )
 
 	from = from && from.params;
 
-	this.createParam ( container, 'x', ParamPos, from, { optional: true } );
-	this.createParam ( container, 'y', ParamPos, from, { optional: true, height:true } );
-	this.createParam ( container, 'z', ParamPos, from, { optional: true } );
-	this.createParam ( container, 'r', ParamNumber, from, { optional: true } );
-	this.createParam ( container, 'rm', ParamNumber, from, { optional: true } );
-	this.createParam ( container, 'm', ParamNumber, from, { optional: true } );
-	this.createParam ( container, 'c', ParamNumber, from, { optional: true } );
-	this.createParam ( container, 'l', ParamNumber, from, { optional: true } );
-	this.createParam ( container, 'lm', ParamNumber, from, { optional: true } );
-	//this.createParam ( container, 'team', ParamText, from, { optional: true } );
-	//this.createParam ( container, 'name', ParamText, from, { optional: true } );
+	this.createParam ( container, 'x', 'Pos', from, { optional: true } );
+	this.createParam ( container, 'y', 'Pos', from, { optional: true, height:true } );
+	this.createParam ( container, 'z', 'Pos', from, { optional: true } );
+	this.createParam ( container, 'r', 'Number', from, { optional: true } );
+	this.createParam ( container, 'rm', 'Number', from, { optional: true } );
+	this.createParam ( container, 'm', 'Number', from, { optional: true } );
+	this.createParam ( container, 'c', 'Number', from, { optional: true } );
+	this.createParam ( container, 'l', 'Number', from, { optional: true } );
+	this.createParam ( container, 'lm', 'Number', from, { optional: true } );
+	//this.createParam ( container, 'team', 'Text', from, { optional: true } );
+	//this.createParam ( container, 'name', 'Text', from, { optional: true } );
 
 	var row = document.createElement ( 'tr' );
 
@@ -2503,18 +2610,18 @@ function PlayerSelector ( container, type, optional, from )
 		{
 			if ( typeof from[i].name == 'string' && from[i].name == 'name' )
 			{
-				this.createParam ( container, 'name', ParamText, from, { optional: true, remove: true, index: nameIndex++ } );
+				this.createParam ( container, 'name', 'Text', from, { optional: true, remove: true, index: nameIndex++ } );
 			}
 			else if ( typeof from[i].name == 'string' && from[i].name == 'team' )
 			{
-				this.createParam ( container, 'team', ParamText, from, { optional: true, remove: true, index: teamIndex++ } );
+				this.createParam ( container, 'team', 'Text', from, { optional: true, remove: true, index: teamIndex++ } );
 			}
 			else if ( typeof from[i].name !== 'string' && from[i].name.prefix == 'score_' )
 			{
 				if ( from[i].name.suffix && from[i].name.suffix == '_min' )
-					this.createParam ( container, 'score__min', ParamText, from, { optional: true, remove: true, index: scoreMinIndex++, name: from[i].name.input.value } );
+					this.createParam ( container, 'score__min', 'Text', from, { optional: true, remove: true, index: scoreMinIndex++, name: from[i].name.input.value } );
 				else
-					this.createParam ( container, 'score_', ParamText, from, { optional: true, remove: true, index: scoreIndex++, name: from[i].name.input.value } );
+					this.createParam ( container, 'score_', 'Text', from, { optional: true, remove: true, index: scoreIndex++, name: from[i].name.input.value } );
 			}
 		}
 	}
@@ -2601,7 +2708,9 @@ PlayerSelector.prototype.createParam = function ( container, name, type, from, o
 	}
 
 	var cell = document.createElement ( 'td' );
-	var value = new type ( cell, options.defaultValue, options.optional, fromValue, options );
+	
+	console.log ( 'Param' + type );
+	var value = new params[type] ( cell, options.defaultValue, options.optional, fromValue, options );
 
 	if ( options && options.remove )
 	{
@@ -2689,6 +2798,526 @@ PlayerSelector.prototype.toString = function ( )
 
 	return output + ( params.length ? '[' + params.join(',') + ']' : '' );
 }
+
+/* Extra Structures */
+
+function StructureInventory ( )
+{
+	this.structure = {
+		'Items': {
+			type: 'List',
+			children: {
+				type: 'Compound',
+				children: {
+					'Slot': 'Byte',
+					'id': 'Short',
+					'Damage': 'Short',
+					'Count': 'Byte',
+					'tag': {
+						type: 'Compound',
+						children: (new structures['Item'] ( )).structure
+					}
+				}
+			}
+		}
+	};
+}
+
+/* Block Structures */
+
+function StructureBlock ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure;
+}
+
+/* Item Structures */
+
+function StructureItem ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure;
+	
+	this.structure['ench'] = {
+		type: 'List',
+		children: {
+			type: 'Compound',
+			children: {
+				'id': 'Enchantment',
+				'lvl': 'Short'
+			}
+		}
+	}
+	
+	this.structure['StoredEnchantments'] = {
+		type: 'List',
+		children: {
+			type: 'Compound',
+			children: {
+				'id': 'Enchantment',
+				'lvl': 'Short'
+			}
+		}
+	}
+	
+	this.structure['RepairCost'] = 'Int'
+
+	this.structure['display'] = {
+		type: 'Compound',
+		children: {
+			'Name': 'String',
+			'Lore': {
+				type: 'List',
+				children: 'String'
+			}
+		}
+	}
+}
+
+function StructureItemBookAndQuill ( )
+{
+	this.structure = (new structures['Item'] ( )).structure;
+
+	this.structure.pages = {
+		type: 'List',
+		children: 'String'
+	};
+}
+
+function StructureItemWrittenBook ( )
+{
+	this.structure = (new structures['ItemBookAndQuill'] ( )).structure;
+
+	this.structure.title = 'String'
+	this.structure.author = 'String'
+}
+
+function StructureItemColourable ( )
+{
+	this.structure = (new structures['Item'] ( )).structure;
+
+	this.structure.display.color = 'RGB'
+}
+
+function StructureItemPotion ( )
+{
+	this.structure = (new structures['Item'] ( )).structure;
+
+	this.structure.CustomPotionEffects = {
+		type: 'List',
+		children: {
+			type: 'Compound',
+			children: {
+				'Id': 'Byte',
+				'Amplifier': 'Byte',
+				'Duration': 'Int',
+				'Ambient': 'Checkbox'
+			}
+		}
+	};
+}
+
+function StructureItemPlayerSkull ( )
+{
+	this.structure = (new structures['Item'] ( )).structure;
+
+	this.structure.SkullOwner = 'String';
+}
+
+function StructureItemFireworkStar ( )
+{
+	this.structure = (new structures['Item'] ( )).structure;
+
+	this.structure.Explosion = {
+		'Flicker': 'Checkbox',
+		'Trail': 'Checkbox',
+		'Type': 'Byte',
+		'Colors': {
+			type: 'List',
+			children: 'Int'
+		},
+		'FadeColors': {
+			type: 'List',
+			children: 'Int'
+		}
+	};
+}
+
+function StructureItemFirework ( )
+{
+	this.structure = (new structures['Item'] ( )).structure;
+
+	this.structure.Fireworks = {
+		type: 'Compound',
+		children: {
+			'Flight': 'Byte',
+			'Explosions': {
+				'Flicker': 'Checkbox',
+				'Trail': 'Checkbox',
+				'Type': 'Byte',
+				'Colors': {
+					type: 'List',
+					children: 'Int'
+				},
+				'FadeColors': {
+					type: 'List',
+					children: 'Int'
+				}
+			}
+		}
+	};
+}
+
+/* Entity Structures */
+
+function StructureEntity ( )
+{
+	this.structure = {
+		//'id': 'String',
+		/*'Pos': {
+			type: 'List',
+			children: {
+				type: 'Double',
+				count: 3
+			}
+		},*/
+		'Motion': {
+			type: 'List',
+			children: {
+				type: 'Double',
+				count: 3,
+				noneOrAll: true
+			}
+		},
+		'Rotation': {
+			type: 'List',
+			children: {
+				type: 'Float',
+				count: 2,
+				noneOrAll: true
+			}
+		},
+		'FallDistance': 'Float',
+		'Fire': 'Short',
+		'Air': 'Short',
+		'OnGround': 'Boolean',
+		'Dimmension': 'Int',
+		'Invulnerable': 'Boolean',
+		'PortalCooldown': 'Int',
+		'UUIDMost': 'Long',
+		'UUIDLeast': 'Long',
+		//'Riding': 'Riding'
+	};
+}
+
+/* Mob Entity Structures */
+
+function StructureEntityMobGeneric ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure;
+}
+
+function StructureEntityMobBreedable ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['InLove'] = 'Int'
+	this.structure['Age'] = 'Int'
+}
+
+function StructureEntityMobOwnable ( )
+{
+	this.structure = (new structures['EntityMobBreedable'] ( )).structure;
+	this.structure['Owner'] = 'String'
+	this.structure['Sitting'] = 'Boolean'
+}
+
+function StructureEntityMobBat ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['BatFlags'] = 'Byte'
+}
+
+function StructureEntityMobCreeper ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['powered'] = 'Boolean'
+	this.structure['ExplosionRadius'] = 'Byte'
+	this.structure['Fuse'] = 'Short'
+	this.structure['ignited'] = 'Boolean'
+}
+
+function StructureEntityMobEnderman ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['carried'] = 'Short'
+	this.structure['carriedData'] = 'Short'
+}
+
+function StructureEntityMobHorse ( )
+{
+	this.structure = (new structures['EntityMobBreedable'] ( )).structure;
+	this.structure['Bred'] = 'Boolean'
+	this.structure['ChestedHorse'] = 'Boolean'
+	this.structure['EatingHaystack'] = 'Boolean'
+	this.structure['HasReproduced'] = 'Boolean'
+	this.structure['Tame'] = 'Boolean'
+	this.structure['Temper'] = 'Int'
+	this.structure['Type'] = 'Int'
+	this.structure['Variant'] = 'Int'
+	this.structure['OwnerName'] = 'String'
+	this.structure['Items'] = (new structures['Inventory'] ( )).structure['Items'];
+	//this.structure['Item'] = ;
+	//this.structure['SaddleItem'] = ;
+}
+
+function StructureEntityMobGhast ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['ExplosionPower'] = 'Int'
+}
+
+function StructureEntityMobOzelot ( )
+{
+	this.structure = (new structures['EntityMobOwnable'] ( )).structure;
+	this.structure['CatType'] = 'Int'
+}
+
+function StructureEntityMobPig ( )
+{
+	this.structure = (new structures['EntityMobBreedable'] ( )).structure;
+	this.structure['Saddle'] = 'Boolean'
+}
+
+function StructureEntityMobSheep ( )
+{
+	this.structure = (new structures['EntityMobBreedable'] ( )).structure;
+	this.structure['Sheared'] = 'Boolean'
+	this.structure['Color'] = 'Byte'
+}
+
+function StructureEntityMobSkeleton ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['SkeletonType'] = 'Byte'
+}
+
+function StructureEntityMobSlime ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['Size'] = 'Byte'
+}
+
+function StructureEntityMobWitherBoss ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['Invul'] = 'Int'
+}
+
+function StructureEntityMobWolf ( )
+{
+	this.structure = (new structures['EntityMobOwnable'] ( )).structure;
+	this.structure['Angry'] = 'Byte'
+	this.structure['CollarColor'] = 'Byte'
+}
+
+function StructureEntityMobVillager ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['Profession'] = 'Int'
+	this.structure['Riches'] = 'Int'
+	this.structure['Offers'] = {
+		type: 'Compound',
+		children: {
+			'Recipes': {
+				type: 'List',
+				children: {
+					type: 'Compound',
+					children: {
+						'maxUses': 'Int',
+						'uses': 'Int',
+						/*'buy': {
+						},
+						'buyB': {
+						},
+						'sell': {
+						}*/
+					}
+				}
+			}
+		}
+	}
+}
+
+function StructureEntityMobVillagerGolem ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['PlayerCreated'] = 'Boolean'
+}
+
+function StructureEntityMobZombie ( )
+{
+	this.structure = (new structures['EntityMobGeneric'] ( )).structure;
+	this.structure['IsVillager'] = 'Boolean'
+	this.structure['IsBaby'] = 'Boolean'
+	this.structure['ConversionTime'] = 'Int'
+}
+
+function StructureEntityMobPigZombie ( )
+{
+	this.structure = (new structures['EntityMobZombie'] ( )).structure;
+	this.structure['Anger'] = 'Short'
+}
+
+/* Projectile Entity Structures */
+
+function StructureEntityProjectileGeneric ( )
+{
+	this.structure = {
+		'xTile': 'Short',
+		'yTile': 'Short',
+		'zTile': 'Short',
+		'inTile': 'Byte',
+		'shake': 'Byte',
+		'inGround': 'Byte'
+	};
+}
+
+function StructureEntityProjectileOwned ( )
+{
+	this.structure = (new structures['EntityProjectileGeneric'] ( )).structure;
+	this.structure['ownerName'] = 'String'
+}
+
+function StructureEntityProjectileFireballs ( )
+{
+	this.structure = (new structures['EntityProjectileGeneric'] ( )).structure;
+	this.structure['direction'] = {
+		type: 'List',
+		children: 'Double'
+	}
+}
+
+function StructureEntityProjectileArrow ( )
+{
+	this.structure = (new structures['EntityProjectileGeneric'] ( )).structure;
+	this.structure['inData'] = 'Byte'
+	this.structure['pickup'] = 'Byte'
+	this.structure['player'] = 'Boolean'
+	this.structure['damage'] = 'Double'
+}
+
+function StructureEntityProjectileFireball ( )
+{
+	this.structure = (new structures['EntityProjectileFireballs'] ( )).structure;
+	this.structure['ExplosionPower'] = 'Int'
+}
+
+function StructureEntityProjectileThrownPotion ( )
+{
+	this.structure = (new structures['EntityProjectileOwned'] ( )).structure;
+	this.structure['potionValue'] = 'Int'
+}
+
+/* Minecart Entity Structures */
+
+function StructureEntityMinecart ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure
+	this.structure['CustomDisplayTile'] = 'Boolean'
+	this.structure['DisplayTile'] = 'Int'
+	this.structure['DisplayData'] = 'Int'
+	this.structure['DisplayOffset'] = 'Int'
+	this.structure['CustomName'] = 'String'
+}
+
+function StructureEntityMinecartInventory ( )
+{
+	this.structure = (new structures['EntityMinecart'] ( )).structure;
+	this.structure['Items'] = (new structures['Inventory'] ( )).structure['Items'];
+}
+
+function StructureEntityMinecartFurance ( )
+{
+	this.structure = (new structures['EntityMinecart'] ( )).structure;
+	this.structure['PushX'] = 'Double'
+	this.structure['PushZ'] = 'Double'
+	this.structure['Fuel'] = 'Short'
+}
+
+function StructureEntityMinecartHopper ( )
+{
+	this.structure = (new structures['EntityMinecartInventory'] ( )).structure;
+	this.structure['TransferCooldown'] = 'Int';
+}
+
+function StructureEntityMinecartTNT ( )
+{
+	this.structure = (new structures['EntityMinecart'] ( )).structure;
+	this.structure['TNTFuse'] = 'Int';
+}
+
+function StructureEntityMinecartSpawner ( )
+{
+	this.structure = (new structures['EntityMinecart'] ( )).structure;
+}
+
+/* Other Entity Structures */
+
+function StructureEntityItem ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure
+	//this.structure.Item
+}
+
+function StructureEntityPrimedTNT ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure;
+	this.structure['Fuse'] = 'Int';
+}
+
+function StructureEntityFallingSand ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure;
+	this.structure['TileID'] = 'Int';
+	this.structure['TileEntityData'] = 'Compound';
+	this.structure['Data'] = 'Byte';
+	this.structure['Time'] = 'Byte';
+	this.structure['DropItem'] = 'Boolean';
+	this.structure['HurtEntities'] = 'Boolean';
+	this.structure['FallHurtMax'] = 'Int';
+	this.structure['FallHurtAmount'] = 'Float';
+}
+
+function StructureEntityFirework ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure;
+	this.structure['Life'] = 'Int';
+	this.structure['LifeTime'] = 'Compound';
+	//this.structure['FireworksItem'] = ;
+}
+
+function StructureEntityPaintingLike ( )
+{
+	this.structure = (new structures['Entity'] ( )).structure;
+	this.structure['TileX'] = 'Int';
+	this.structure['TileY'] = 'Int';
+	this.structure['TileZ'] = 'Int';
+	this.structure['Direction'] = 'Byte';
+}
+
+function StructureEntityPainting ( )
+{
+	this.structure = (new structures['EntityPaintingLike'] ( )).structure;
+	this.structure['Motive'] = 'String';
+}
+
+function StructureEntityItemFrame ( )
+{
+	this.structure = (new structures['EntityPaintingLike'] ( )).structure;
+	//this.structure['Item'] = 'Byte';
+	this.structure['ItemDropChance'] = 'Float';
+	this.structure['ItemRotation'] = 'Byte';
+}
+
+/* Tags */
 
 function Tag ( )
 {
@@ -2819,230 +3448,26 @@ Tag.prototype.toString = function ( )
 	return ( this.tag && this.tag.toString ( ) ) || '';
 }
 
-function BlockGenericStructure ( )
-{
-	this.structure = {};
-}
-
-function ItemGenericStructure ( )
-{
-	this.structure = {
-		'ench': {
-			type: 'List',
-			children: {
-				type: 'Compound',
-				children: {
-					'id': 'Enchantment',
-					'lvl': 'Short'
-				}
-			}
-		},
-		'StoredEnchantments': {
-			type: 'List',
-			children: {
-				type: 'Compound',
-				children: {
-					'id': 'Enchantment',
-					'lvl': 'Short'
-				}
-			}
-		},
-		'RepairCost': 'Int',
-
-		'display': {
-			type: 'Compound',
-			children: {
-				'Name': 'String',
-				'Lore': {
-					type: 'List',
-					children: 'String'
-				}
-			}
-		}
-	};
-}
-
-function InventoryStructure ( )
-{
-	this.structure = {
-		'Items': {
-			type: 'List',
-			children: {
-				type: 'Compound',
-				children: {
-					'Slot': 'Byte',
-					'id': 'Short',
-					'Damage': 'Short',
-					'Count': 'Byte',
-					'tag': {
-						type: 'Compound',
-						children: (new ItemGenericStructure ( )).structure
-					}
-				}
-			}
-		}
-	};
-}
-
-function ItemBookAndQuillStructure ( )
-{
-	this.structure = (new ItemGenericStructure ( )).structure;
-
-	this.structure.pages = {
-		type: 'List',
-		children: 'String'
-	};
-}
-
-function ItemWrittenBookStructure ( )
-{
-	this.structure = (new ItemBookAndQuillStructure ( )).structure;
-
-	this.structure.title = 'String'
-	this.structure.author = 'String'
-}
-
-function ItemColourableStructure ( )
-{
-	this.structure = (new ItemGenericStructure ( )).structure;
-
-	this.structure.display.color = 'RGB'
-}
-
-function ItemPotionStructure ( )
-{
-	this.structure = (new ItemGenericStructure ( )).structure;
-
-	this.structure.CustomPotionEffects = {
-		type: 'List',
-		children: {
-			type: 'Compound',
-			children: {
-				'Id': 'Byte',
-				'Amplifier': 'Byte',
-				'Duration': 'Int',
-				'Ambient': 'Checkbox'
-			}
-		}
-	};
-}
-
-function ItemPlayerSkullStructure ( )
-{
-	this.structure = (new ItemGenericStructure ( )).structure;
-
-	this.structure.SkullOwner = 'String';
-}
-
-function ItemFireworkStarStructure ( )
-{
-	this.structure = (new ItemGenericStructure ( )).structure;
-
-	this.structure.Explosion = {
-		'Flicker': 'Checkbox',
-		'Trail': 'Checkbox',
-		'Type': 'Byte',
-		'Colors': {
-			type: 'List',
-			children: 'Int'
-		},
-		'FadeColors': {
-			type: 'List',
-			children: 'Int'
-		}
-	};
-}
-
-function ItemFireworkStructure ( )
-{
-	this.structure = (new ItemGenericStructure ( )).structure;
-
-	this.structure.Fireworks = {
-		type: 'Compound',
-		children: {
-			'Flight': 'Byte',
-			'Explosions': {
-				'Flicker': 'Checkbox',
-				'Trail': 'Checkbox',
-				'Type': 'Byte',
-				'Colors': {
-					type: 'List',
-					children: 'Int'
-				},
-				'FadeColors': {
-					type: 'List',
-					children: 'Int'
-				}
-			}
-		}
-	};
-}
-
-function TagInventory ( container, from )
-{
-	var structure = (new InventoryStructure ( )).structure;
-
-	this.tag = new TagCompound ( container, structure, true, from && from.tag );
-}
-
-TagInventory.prototype = new Tag ( );
-
-function TagBlockGeneric ( container, from )
-{
-	var structure = (new BlockGenericStructure ( )).structure;
-
-	this.tag = new TagCompound ( container, structure, true, from && from.tag );
-}
-
-TagBlockGeneric.prototype = new Tag ( );
-
-function TagItemGeneric ( container, from )
-{
-	var structure = (new ItemGenericStructure ( )).structure;
-
-	this.tag = new TagCompound ( container, structure, true, from && from.tag );
-}
-
-TagItemGeneric.prototype = new Tag ( );
-
-function TagItemBookAndQuill ( container, from )
-{
-	var structure = (new ItemBookAndQuillStructure ( )).structure;
-
-	this.tag = new TagCompound ( container, structure, true, from && from.tag );
-}
-
-TagItemBookAndQuill.prototype = new Tag ( );
-
-function TagItemWrittenBook ( container, from )
-{
-	var structure = (new ItemWrittenBookStructure ( )).structure;
-
-	this.tag = new TagCompound ( container, structure, true, from && from.tag );
-}
-
-TagItemWrittenBook.prototype = new Tag ( );
-
-function TagItemColourable ( container, from )
-{
-	var structure = (new ItemColourableStructure ( )).structure;
-
-	this.tag = new TagCompound ( container, structure, true, from && from.tag );
-}
-
-TagItemColourable.prototype = new Tag ( );
-
 function TagCompound ( container, structure, optional, from )
 {
 	this.table = this.createTable ( container );
-
-	for ( var name in structure )
+	
+	if ( typeof structure == 'string' )
 	{
-		var tag = structure[name];
-		if ( typeof tag == 'string' )
-			this.createTag ( this.table, name, tag, null, true, from && from.tags && from.tags[name].value || null );
-		else
-			this.createTag ( this.table, name, tag.type, tag.children || null, tag.optional || true, from && from.tags && from.tags[name].value || null );
+		console.log ( 'Structure' + structure );
+		structure = (new structures[structure]).structure;
+	}
+
+	if ( structure )
+	{
+		for ( var name in structure )
+		{
+			var tag = structure[name];
+			if ( typeof tag == 'string' )
+				this.createTag ( this.table, name, tag, null, true, from && from.tags && from.tags[name] && from.tags[name].value || null );
+			else
+				this.createTag ( this.table, name, tag.type, tag.children || null, tag.optional || true, from && from.tags && from.tags[name] && from.tags[name].value || null );
+		}
 	}
 
 	var button = document.createElement ( 'button' );
@@ -3114,26 +3539,40 @@ function TagList ( container, structure, optional, from )
 {
 	this.type = structure.type || structure;
 	this.children = structure.children || null;
+	this.count = structure.count || '*';
+	this.noneOrAll = structure.noneOrAll || false;
 	this.container = container;
 	this.tags = [];
 
 	this.div = document.createElement ( 'div' );
 	container.appendChild ( this.div );
-
-	var button = document.createElement ( 'button' );
-	button.appendChild ( document.createTextNode ( 'Add List Item' ) );
-	button.addEventListener ( 'click', ( function ( tagList ) { return function ( e ) { tagList.onAddButtonClick ( e ) } } ) ( this ) );
-	container.appendChild ( button );
-
+	
+	if ( this.count == '*' )
+	{
+		var button = document.createElement ( 'button' );
+		button.appendChild ( document.createTextNode ( 'Add List Item' ) );
+		button.addEventListener ( 'click', ( function ( tagList ) { return function ( e ) { tagList.onAddButtonClick ( e ) } } ) ( this ) );
+		container.appendChild ( button );
+	}
+	
 	if ( from && from.type == this.type )
 	{
-		for ( var i = 0; i < from.tags.length; i++ )
+		var count = from.tags.length;
+		if ( this.count !== '*' && count > this.count )
+			count = this.count
+			
+		for ( var i = 0; i < count; i++ )
 		{
 			this.addItem ( from.tags[i].value );
 		}
 		//tags
 	}
-	//this.addItem ( );
+	
+	if ( this.count !== '*' )
+	{
+		while ( this.tags.length < this.count )
+			this.addItem ( );
+	}
 }
 
 TagList.prototype = new Tag ( );
@@ -3144,10 +3583,13 @@ TagList.prototype.addItem = function ( from )
 	var div = document.createElement ( 'div' );
 	//div.className = 'mc-tag-options';
 
-	var cell = document.createElement ( 'span' );
-	cell.appendChild ( document.createTextNode ( 'Remove' ) );
-	cell.addEventListener ( 'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, div ) );
-	div.appendChild ( cell );
+	if ( this.count === '*' )
+	{
+		var cell = document.createElement ( 'span' );
+		cell.appendChild ( document.createTextNode ( 'Remove' ) );
+		cell.addEventListener ( 'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, div ) );
+		div.appendChild ( cell );
+	}
 
 	this.div.appendChild ( div );
 
@@ -3160,6 +3602,31 @@ TagList.prototype.addItem = function ( from )
 	} );
 
 	updateCommand ( );
+}
+
+Tag.prototype.update = function ( )
+{
+	var required = false
+	
+	if ( this.tags )
+	{
+		if ( this.noneOrAll )
+		{
+			for ( var tag in this.tags )
+			{
+				if ( this.tags[tag].value.toString ( ) !== '' )
+				{
+					required = true
+					break;
+				}
+			}
+		}
+	
+		for ( var tag in this.tags )
+		{
+			this.tags[tag].value.update ( );
+		}
+	}
 }
 
 TagList.prototype.onAddButtonClick = function ( e )
@@ -3175,12 +3642,25 @@ TagList.prototype.onAddButtonClick = function ( e )
 	return false;
 }
 
-function TagEnchantment ( container, structure, optional, from )
+function TagFloat ( container, structure, optional, from )
 {
-	this.tag = new ParamEnchantment ( container, '', true, from && from.tag );
+	this.tag = new ParamNumber ( container, '', optional, from && from.tag, { isFloat: true } );
 }
 
-TagEnchantment.prototype = new Tag ( );
+TagFloat.prototype = new Tag ( );
+
+TagFloat.prototype.toString = function ( )
+{
+	var value = this.tag.toString ( );
+	if ( !isNaN ( parseFloat ( value ) ) )
+	{
+		value = parseFloat ( value ).toString ( )
+		if ( value.indexOf('.') == '-1' )
+			value = value + '.0'
+	}
+
+	return value;
+}
 
 function TagShort ( container, structure, optional, from )
 {
@@ -3188,10 +3668,6 @@ function TagShort ( container, structure, optional, from )
 }
 
 TagShort.prototype = new Tag ( );
-
-var TagByte = TagShort;
-var TagInt = TagShort;
-var TagRGB = TagShort;
 
 function TagString ( container, structure, optional, form )
 {
@@ -3208,6 +3684,20 @@ TagString.prototype.toString = function ( )
 
 	return value;
 }
+
+function TagBoolean ( container, structure, optional, from )
+{
+	this.tag = new ParamBoolean ( container, '', optional, from && from.tag, { numberOutput: true } );
+}
+
+TagBoolean.prototype = new Tag ( );
+
+function TagEnchantment ( container, structure, optional, from )
+{
+	this.tag = new ParamEnchantment ( container, '', true, from && from.tag );
+}
+
+TagEnchantment.prototype = new Tag ( );
 
 function TagSelector ( container )
 {
@@ -3367,6 +3857,7 @@ function createSelector ( container )
 	updateCommand ( );
 }
 
+/**COMMANDS**/
 commands = {
 	'achievement': CommandAchievement,
 	'clear': CommandClear,
@@ -3400,23 +3891,93 @@ commands = {
 	'xp': CommandXP
 };
 
+/**PARAMS**/
+params = {
+	'Achievement': ParamAchievement,
+	'Boolean': ParamBoolean,
+	'Block': ParamBlock,
+	'DataTag': ParamDataTag,
+	'Enchantment': ParamEnchantment,
+	'Entity': ParamEntity,
+	'Item': ParamItem,
+	'List': ParamList,
+	'Number': ParamNumber,
+	'PlayerSelector': ParamPlayerSelector,
+	'Pos': ParamPos,
+	'Potion': ParamPotion,
+	'RawMessage': ParamRawMessage,
+	'RawMessageEvent': ParamRawMessageEvent,
+	'RawMessageExtras': ParamRawMessageExtras,
+	'Sound': ParamSound,
+	'Static': ParamStatic,
+	'Text': ParamText,
+	'XP': ParamXP
+}
+
+/**TAGS**/
 tags = {
-	'Inventory': TagInventory,
-	
-	'BlockGeneric': TagBlockGeneric,
-	'ItemGeneric': TagItemGeneric,
-	'ItemBookAndQuill': TagItemBookAndQuill,
-	'ItemWrittenBook': TagItemWrittenBook,
-	'ItemColourable': TagItemColourable,
-	
 	'Compound': TagCompound,
 	'List': TagList,
-	'Enchantment': TagEnchantment,
+	
+	'Byte': TagShort,
+	'Double': TagFloat,
+	'Float': TagFloat,
+	'Int': TagShort,
+	'Long': TagShort,
 	'Short': TagShort,
-	'Byte': TagByte,
-	'Int': TagInt,
-	'RGB': TagRGB,
-	'String': TagString
+	'String': TagString,
+	
+	'Boolean': TagBoolean,
+	'Enchantment': TagEnchantment,
+	'RGB': TagShort
+}
+
+/**STRUCTURE**/
+structures = {
+	'Inventory': StructureInventory,
+	
+	'Block': StructureBlock,
+	
+	'Item': StructureItem,
+	'ItemBookAndQuill': StructureItemBookAndQuill,
+	'ItemWrittenBook': StructureItemWrittenBook,
+	'ItemColourable': StructureItemColourable,
+	
+	'Entity': StructureEntity,
+	
+	'EntityMobGeneric': StructureEntityMobGeneric,
+	'EntityMobBreedable': StructureEntityMobBreedable,
+	
+	'EntityMobBat': StructureEntityMobBat,
+	'EntityMobHorse': StructureEntityMobHorse,
+	'EntityMobOzelot': StructureEntityMobOzelot,
+	'EntityMobPig': StructureEntityMobPig,
+	'EntityMobVillager': StructureEntityMobVillager,
+	
+	'EntityMobEnderman': StructureEntityMobEnderman,
+	'EntityMobWolf': StructureEntityMobWolf,
+	
+	'EntityMobCreeper': StructureEntityMobCreeper,
+	'EntityMobGhast': StructureEntityMobGhast,
+	'EntityMobSlime': StructureEntityMobSlime,
+	'EntityMobSkeleton': StructureEntityMobSkeleton,
+	'EntityMobZombie': StructureEntityMobZombie,
+	'EntityMobPigZombie': StructureEntityMobPigZombie,
+	
+	'EntityMobVillagerGolem': StructureEntityMobVillagerGolem,
+	
+	'EntityMobWitherBoss': StructureEntityMobWitherBoss,
+	
+	'EntityProjectileGeneric': StructureEntityProjectileGeneric,
+	
+	'EntityProjectileOwned': StructureEntityProjectileOwned,
+	'EntityProjectileFireballs': StructureEntityProjectileFireballs,
+	
+	'EntityProjectileArrow': StructureEntityProjectileArrow,
+	'EntityProjectileFireball': StructureEntityProjectileFireball,
+	'EntityProjectileThrownPotion': StructureEntityProjectileThrownPotion,
+	
+	'EntityItem': StructureEntityItem,
 }
 
 //** BLOCKS AND ITEMS GO HERE **//
@@ -3458,7 +4019,7 @@ blocks = [
 {id:20,data:0,name:"Glass"},
 {id:21,data:0,name:"Lapis Lazuli Ore"},
 {id:22,data:0,name:"Lapis Lazuli Block"},
-{id:23,data:0,name:"Dispenser",tag:"Inventory"},
+{id:23,data:0,name:"Dispenser",structure:"Inventory"},
 {id:24,data:0,name:"Sandstone"},
 {id:24,data:1,name:"Chiseled Sandstone"},
 {id:24,data:2,name:"Smooth Sandstone"},
@@ -3510,7 +4071,7 @@ blocks = [
 {id:51,data:0,name:"Fire"},
 {id:52,data:0,name:"Monster Spawner"},
 {id:53,data:0,name:"Oak Wood Stairs"},
-{id:54,data:0,name:"Chest",tag:"Inventory"},
+{id:54,data:0,name:"Chest",structure:"Inventory"},
 {id:55,data:0,name:"Redstone Dust"},
 {id:56,data:0,name:"Diamond Ore"},
 {id:57,data:0,name:"Block of Diamond"},
@@ -3612,7 +4173,7 @@ blocks = [
 {id:145,data:0,name:"Anvil"},
 {id:145,data:1,name:"Slightly Damaged Anvil"},
 {id:145,data:2,name:"Very Damaged Anvil"},
-{id:146,data:0,name:"Trapped Chest",tag:"Inventory"},
+{id:146,data:0,name:"Trapped Chest",structure:"Inventory"},
 {id:147,data:0,name:"Weighted Pressure Plate (Light)"},
 {id:148,data:0,name:"Weighted Pressure Plate (Heavy)"},
 {id:149,data:0,name:"tile.comparator.name"},
@@ -3626,7 +4187,7 @@ blocks = [
 {id:155,data:2,name:"Pillar Quartz Block"},
 {id:156,data:0,name:"Quartz Stairs"},
 {id:157,data:0,name:"Activator Rail"},
-{id:158,data:0,name:"Dropper",tag:"Inventory"},
+{id:158,data:0,name:"Dropper",structure:"Inventory"},
 {id:159,data:0,name:"White Stained Clay"},
 {id:159,data:1,name:"Orange Stained Clay"},
 {id:159,data:2,name:"Magenta Stained Clay"},
@@ -4186,243 +4747,308 @@ items = [
 {id:175,data:5,name:"Peony"}
 ];
 
-
-entities = {
-	'MushroomCow': {
-		name: 'Mooshroom',
-		tag: 'MonsterGeneric'
-	},
-	'Chicken': {
-		name: 'Chicken',
-		tag: 'MonsterGeneric'
-	},
-	'Sheep': {
-		name: 'Sheep',
-		tag: 'MonsterGeneric'
-	},
-	'Giant': {
-		name: 'Giant',
-		tag: 'MonsterGeneric'
-	},
-	'MinecartHopper': {
-		name: 'Minecart Hopper',
-		tag: 'MonsterGeneric'
-	},
-	'Boat': {
-		name: 'Boat',
-		tag: 'MonsterGeneric'
-	},
-	'SmallFireball': {
-		name: 'Small Fireball',
-		tag: 'MonsterGeneric'
-	},
-	'PigZombie': {
-		name: 'Zombie Pigman',
-		tag: 'MonsterGeneric'
-	},
-	'WitherBoss': {
-		name: 'Wither',
-		tag: 'MonsterGeneric'
-	},
-	'Slime': {
-		name: 'Slime',
-		tag: 'MonsterGeneric'
-	},
-	'Item': {
-		name: 'Item',
-		tag: 'MonsterGeneric'
-	},
-	'LeashKnot': {
-		name: 'Leash Knot',
-		tag: 'MonsterGeneric'
-	},
-	'Blaze': {
-		name: 'Blaze',
-		tag: 'MonsterGeneric'
-	},
-	'Pig': {
-		name: 'Pig',
-		tag: 'MonsterGeneric'
-	},
-	'Fireball': {
-		name: 'Fireball',
-		tag: 'MonsterGeneric'
-	},
-	'Wolf': {
-		name: 'Wolf',
-		tag: 'MonsterGeneric'
-	},
-	'CaveSpider': {
-		name: 'Cave Spider',
-		tag: 'MonsterGeneric'
-	},
-	'MinecartSpawner': {
-		name: 'Minecart Spawner',
-		tag: 'MonsterGeneric'
-	},
-	'EnderDragon': {
-		name: 'Ender Dragon',
-		tag: 'MonsterGeneric'
-	},
-	'Monster': {
-		name: 'Monster',
-		tag: 'MonsterGeneric'
-	},
-	'SnowMan': {
-		name: 'Snow Golem',
-		tag: 'MonsterGeneric'
-	},
-	'MinecartRidable': {
-		name: 'Minecart',
-		tag: 'MonsterGeneric'
-	},
-	'Painting': {
-		name: 'Painting',
-		tag: 'MonsterGeneric'
-	},
-	'Witch': {
-		name: 'Witch',
-		tag: 'MonsterGeneric'
-	},
-	'ThrownExpBottle': {
-		name: 'XP Bottle',
-		tag: 'MonsterGeneric'
-	},
-	'Snowball': {
-		name: 'Snowball',
-		tag: 'MonsterGeneric'
-	},
-	'MinecraftChest': {
-		name: 'Minecraft Chest',
-		tag: 'MonsterGeneric'
-	},
-	'WitherSkull': {
-		name: 'Wither Skull',
-		tag: 'MonsterGeneric'
-	},
-	'Enderman': {
-		name: 'Enderman',
-		tag: 'MonsterGeneric'
-	},
-	'MinecartFurnace': {
-		name: 'Minecart Furnace',
-		tag: 'MonsterGeneric'
-	},
-	'EnderCrystal': {
-		name: 'Ender Crystal',
-		tag: 'MonsterGeneric'
-	},
-	'FireworksRocketEntity': {
-		name: 'Firework',
-		tag: 'MonsterGeneric'
-	},
-	'Mob': {
-		name: 'Mob',
-		tag: 'MonsterGeneric'
-	},
-	'Creeper': {
-		name: 'Creeper',
-		tag: 'MonsterGeneric'
-	},
-	'Arrow': {
-		name: 'Arrow',
-		tag: 'MonsterGeneric'
-	},
-	'EntityHorse': {
-		name: 'Horse',
-		tag: 'MonsterGeneric'
-	},
-	'LavaSlime': {
-		name: 'Magma Cube',
-		tag: 'MonsterGeneric'
-	},
-	'ThrownPotion': {
-		name: 'Potion',
-		tag: 'MonsterGeneric'
-	},
-	'Silverfish': {
-		name: 'Silverfish',
-		tag: 'MonsterGeneric'
-	},
-	'Spider': {
-		name: 'Spider',
-		tag: 'MonsterGeneric'
-	},
-	'ThrownEnderpearl': {
-		name: 'Enderpearl',
-		tag: 'MonsterGeneric'
-	},
-	'EyeOfEnderSignal': {
-		name: 'Eye Of Ender',
-		tag: 'MonsterGeneric'
-	},
-	'Bat': {
+/**ENTITIES**/
+entities = [
+	'Passive Mobs',
+	{
+		id: 'Bat',
 		name: 'Bat',
-		tag: 'MonsterGeneric'
+		structure: 'EntityMobBat'
 	},
-	'VillagerGolem': {
-		name: 'Golem',
-		tag: 'MonsterGeneric'
+	{
+		id: 'Chicken',
+		name: 'Chicken',
+		structure: 'EntityMobBreedable'
 	},
-	'PrimedTnt': {
-		name: 'Primed TNT',
-		tag: 'MonsterGeneric'
-	},
-	'FallingSand': {
-		name: 'Falling Sand',
-		tag: 'MonsterGeneric'
-	},
-	'ItemFrame': {
-		name: 'Item Frame',
-		tag: 'MonsterGeneric'
-	},
-	'XPOrb': {
-		name: 'XP Orb',
-		tag: 'MonsterGeneric'
-	},
-	'MinecartTNT': {
-		name: 'Minecart TNT',
-		tag: 'MonsterGeneric'
-	},
-	'Ozelot': {
-		name: 'Ocelot',
-		tag: 'MonsterGeneric'
-	},
-	'Villager': {
-		name: 'Villager',
-		tag: 'MonsterGeneric'
-	},
-	'Squid': {
-		name: 'Squid',
-		tag: 'MonsterGeneric'
-	},
-	'Zombie': {
-		name: 'Zombie',
-		tag: 'MonsterGeneric'
-	},
-	'Cow': {
+	{
+		id: 'Cow',
 		name: 'Cow',
-		tag: 'MonsterGeneric'
+		structure: 'EntityMobBreedable'
 	},
-	'Skeleton': {
-		name: 'Skeleton',
-		tag: 'MonsterGeneric'
+	{
+		id: 'EntityHorse',
+		name: 'Horse',
+		structure: 'EntityMobHorse'
 	},
-	'Ghast': {
+	{
+		id: 'MushroomCow',
+		name: 'Mooshroom',
+		structure: 'EntityMobBreedable'
+	},
+	{
+		id: 'Ozelot',
+		name: 'Ocelot',
+		structure: 'EntityMobOzelot'
+	},
+	{
+		id: 'Pig',
+		name: 'Pig',
+		structure: 'EntityMobPig'
+	},
+	{
+		id: 'Sheep',
+		name: 'Sheep',
+		structure: 'EntityMobBreedable'
+	},
+	{
+		id: 'Squid',
+		name: 'Squid',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'Villager',
+		name: 'Villager',
+		structure: 'EntityMobVillager'
+	},
+	'Neutral Mobs',
+	{
+		id: 'Enderman',
+		name: 'Enderman',
+		structure: 'EntityMobEnderman'
+	},
+	{
+		id: 'Wolf',
+		name: 'Wolf',
+		structure: 'EntityMobWolf'
+	},
+	'Aggressive Mobs',
+	{
+		id: 'Blaze',
+		name: 'Blaze',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'CaveSpider',
+		name: 'Cave Spider',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'Creeper',
+		name: 'Creeper',
+		structure: 'EntityMobCreeper'
+	},
+	{
+		id: 'Ghast',
 		name: 'Ghast',
-		tag: 'MonsterGeneric'
+		structure: 'EntityMobGhast'
 	},
-}
+	{
+		id: 'Giant',
+		name: 'Giant',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'LavaSlime',
+		name: 'Magma Cube',
+		structure: 'EntityMobSlime'
+	},
+	{
+		id: 'Silverfish',
+		name: 'Silverfish',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'Skeleton',
+		name: 'Skeleton',
+		structure: 'EntityMobSkeleton'
+	},
+	{
+		id: 'Slime',
+		name: 'Slime',
+		structure: 'EntityMobSlime'
+	},
+	{
+		id: 'Spider',
+		name: 'Spider',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'Witch',
+		name: 'Witch',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'Zombie',
+		name: 'Zombie',
+		structure: 'EntityMobZombie'
+	},
+	{
+		id: 'PigZombie',
+		name: 'Zombie Pigman',
+		structure: 'EntityMobPigZombie'
+	},
+	'Utility Mobs',
+	{
+		id: 'VillagerGolem',
+		name: 'Iron Golem',
+		structure: 'EntityMobVillagerGolem'
+	},
+	{
+		id: 'SnowMan',
+		name: 'Snow Golem',
+		structure: 'EntityMobGeneric'
+	},
+	'Boss Mobs',
+	{
+		id: 'EnderDragon',
+		name: 'Ender Dragon',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'WitherBoss',
+		name: 'Wither',
+		structure: 'EntityMobWitherBoss'
+	},
+	'Projectiles',
+	{
+		id: 'Arrow',
+		name: 'Arrow',
+		structure: 'EntityProjectileArrow'
+	},
+	{
+		id: 'ThrownEnderpearl',
+		name: 'Enderpearl',
+		structure: 'EntityProjectileOwned'
+	},
+	{
+		id: 'Fireball',
+		name: 'Fireball',
+		structure: 'EntityProjectileFireball'
+	},
+	{
+		id: 'ThrownPotion',
+		name: 'Potion',
+		structure: 'EntityProjectileThrownPotion'
+	},
+	{
+		id: 'SmallFireball',
+		name: 'Small Fireball',
+		structure: 'EntityProjectileFireballs'
+	},
+	{
+		id: 'Snowball',
+		name: 'Snowball',
+		structure: 'EntityProjectileOwned'
+	},
+	{
+		id: 'WitherSkull',
+		name: 'Wither Skull',
+		structure: 'EntityProjectileFireballs'
+	},
+	{
+		id: 'ThrownExpBottle',
+		name: 'XP Bottle',
+		structure: 'EntityProjectileOwned'
+	},
+	'Minecarts',
+	{
+		id: 'MinecartRidable',
+		name: 'Minecart',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'MinecartHopper',
+		name: 'Hopper Minecart',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'MinecartFurnace',
+		name: 'Powered Minecart',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'MinecartSpawner',
+		name: 'Spawner Minecart',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'MinecraftChest',
+		name: 'Storage Minecart',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'MinecartTNT',
+		name: 'TNT Minecart',
+		structure: 'EntityMobGeneric'
+	},
+	'Other',
+	{
+		id: 'Boat',
+		name: 'Boat',
+		structure: 'Entity'
+	},
+	{
+		id: 'EnderCrystal',
+		name: 'Ender Crystal',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'EyeOfEnderSignal',
+		name: 'Eye Of Ender',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'FallingSand',
+		name: 'Falling Sand',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'FireworksRocketEntity',
+		name: 'Firework',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'PrimedTnt',
+		name: 'Primed TNT',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'Item',
+		name: 'Item',
+		structure: 'EntityItem'
+	},
+	{
+		id: 'ItemFrame',
+		name: 'Item Frame',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'LeashKnot',
+		name: 'Leash Knot',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'Painting',
+		name: 'Painting',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'XPOrb',
+		name: 'XP Orb',
+		structure: 'EntityMobGeneric'
+	},
+	/*
+	{
+		id: 'Mob',
+		name: 'Mob',
+		structure: 'EntityMobGeneric'
+	},
+	{
+		id: 'Monster',
+		name: 'Monster',
+		structure: 'EntityMobGeneric'
+	},*/
+]
 
-params = {
-	'Number': ParamNumber,
-	'RawMessage': ParamRawMessage
-}
-
+/**MCCOMMANDS**/
 var mcCommands = {
 	'commands': commands,
 	'params': params,
 	'tags': tags,
+	'structures': structures,
+	'items': items,
+	'blocks': blocks,
+	'entities': entities,
 	'selectors': selectors,
 	'create': createSelector
 };

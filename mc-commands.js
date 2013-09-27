@@ -346,12 +346,15 @@ Command.prototype.groupRadioFirst = function ( name, index )
 Command.prototype.createParam = function ( container, name, type, from, options )
 {
 	var defaultOptions = {
+		showName: true,
 		nameBorder: true,
 		optional: false,
 		ignoreValue: false,
 		ignoreIfHidden: true,
 		neverRequireValue: false
 	}
+	
+	var fragment = document.createDocumentFragment ( );
 	
 	defaultOptions = mergeObjects ( this.defaultParamOptions, defaultOptions )
 	
@@ -408,43 +411,58 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 			}
 		}
 	}
-
-	var row = document.createElement ( 'tr' );
-
-	/* Param title */
 	
-	var cell = document.createElement ( 'th' );
+	var row;
 	
-	if ( typeof name == 'object' )
+	if ( options.showName )
 	{
-		var nameInput = document.createElement ( 'input' );
-		nameInput.className = 'param-name';
-		nameInput.value = name.defaultValue || fromValue && fromValue.name.input && fromValue.name.input.value || ''
-		nameInput.addEventListener ( 'change', updateCommand );
-		name.input = nameInput;
+		row = document.createElement ( 'tr' );
+
+		/* Param title */
 		
-		if ( options.nameBorder )
-			cell.appendChild ( document.createTextNode ( options.optional ? '[' : '<' ) );
+		var cell = document.createElement ( 'th' );
+		
+		if ( typeof name == 'object' )
+		{
+			var nameInput = document.createElement ( 'input' );
+			nameInput.className = 'param-name';
+			nameInput.value = name.defaultValue || fromValue && fromValue.name.input && fromValue.name.input.value || ''
+			nameInput.addEventListener ( 'change', updateCommand );
+			name.input = nameInput;
 			
-		if ( name.prefix )
-			cell.appendChild ( document.createTextNode ( name.prefix ) );
+			if ( options.nameBorder )
+				cell.appendChild ( document.createTextNode ( options.optional ? '[' : '<' ) );
+				
+			if ( name.prefix )
+				cell.appendChild ( document.createTextNode ( name.prefix ) );
+			
+			cell.appendChild ( nameInput );
+			
+			if ( name.suffix )
+				cell.appendChild ( document.createTextNode ( name.suffix ) );
+			
+			if ( options.nameBorder )
+				cell.appendChild ( document.createTextNode ( options.optional ? ']' : '>' ) );
+		}
+		else
+			cell.appendChild ( document.createTextNode ( options.nameBorder ? ( options.optional ? '[' + name + ']' : '<' + name + '>' ) : name ) );
 		
-		cell.appendChild ( nameInput );
-		
-		if ( name.suffix )
-			cell.appendChild ( document.createTextNode ( name.suffix ) );
-		
-		if ( options.nameBorder )
-			cell.appendChild ( document.createTextNode ( options.optional ? ']' : '>' ) );
+		row.appendChild ( cell );
 	}
-	else
-		cell.appendChild ( document.createTextNode ( options.nameBorder ? ( options.optional ? '[' + name + ']' : '<' + name + '>' ) : name ) );
-	
-	row.appendChild ( cell );
 	
 	/* data */
 
-	cell = document.createElement ( 'td' );
+	if ( options.showName )
+	{
+		cell = document.createElement ( 'td' );
+		row.appendChild ( cell );
+		fragment.appendChild ( row );
+	}
+	else
+	{
+		cell = document.createElement ( 'div' );
+		fragment.appendChild ( cell );
+	}
 	
 	if ( options.group !== undefined && options.groupIndex !== undefined )
 	{
@@ -477,10 +495,6 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 	
 	cell.addEventListener ( 'click', ( function ( param ) { return function () { param.selectGroup ( ) } } ) ( value ) );
 	
-	row.appendChild ( cell );
-
-	container.appendChild ( row );
-	
 	var param = {
 		name: name,
 		value: value,
@@ -489,7 +503,7 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 		ignoreIfHidden: options.ignoreIfHidden,
 		optional: options.optional,
 		neverRequireValue: options.neverRequireValue,
-		container: row,
+		container: row || cell,
 		group: options.group,
 		groupIndex: options.groupIndex,
 		groupRadiobox: options.groupRadiobox
@@ -499,6 +513,8 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 		this.params[name] = param
 		
 	this.paramsOrdered.push ( param );
+	
+	container.appendChild ( fragment );
 }
 
 Command.prototype.onGroupRadioboxChange = function ( e )
@@ -2825,7 +2841,12 @@ function StructureInventory ( )
 		'Items': {
 			type: 'List',
 			options: {
-				type: 'Compound',
+				type: 'Item',
+				options: {
+					count: true,
+					slot: true
+				}
+				/*type: 'Compound',
 				options: {
 					'Slot': 'Byte',
 					'id': 'Short',
@@ -2835,7 +2856,7 @@ function StructureInventory ( )
 						type: 'Compound',
 						options: (new structures['Item'] ( )).structure
 					}
-				}
+				}*/
 			}
 		}
 	};
@@ -3012,7 +3033,7 @@ function StructureEntity ( )
 		'Fire': 'Short',
 		'Air': 'Short',
 		'OnGround': 'Boolean',
-		'Dimmension': 'Int',
+		'Dimension': 'Int',
 		'Invulnerable': 'Boolean',
 		'PortalCooldown': 'Int',
 		'UUIDMost': 'Long',
@@ -3091,8 +3112,18 @@ function StructureEntityMobHorse ( )
 	this.structure['Variant'] = 'Int'
 	this.structure['OwnerName'] = 'String'
 	this.structure['Items'] = (new structures['Inventory'] ( )).structure['Items'];
-	//this.structure['Item'] = ;
-	//this.structure['SaddleItem'] = ;
+	this.structure['Item'] = {
+		type: 'Item',
+		options: {
+			count: true
+		}
+	}
+	this.structure['SaddleItem'] = {
+		type: 'Item',
+		options: {
+			count: true
+		}
+	}
 }
 
 function StructureEntityMobGhast ( )
@@ -3284,6 +3315,8 @@ function StructureEntityMinecartHopper ( )
 {
 	this.structure = (new structures['EntityMinecartInventory'] ( )).structure;
 	this.structure['TransferCooldown'] = 'Int';
+	this.structure['Items'].options.maxCount = 5;
+	this.structure['Items'].options.options.slotCount = 4;
 }
 
 function StructureEntityMinecartTNT ( )
@@ -3361,6 +3394,8 @@ function Tag ( )
 {
 }
 
+Tag.prototype = new Param ( );
+
 Tag.prototype.init = function ( container, description, options )
 {
 	var defaultOptions = {
@@ -3372,6 +3407,9 @@ Tag.prototype.init = function ( container, description, options )
 	this.container = container
 	
 	this.description = description
+	
+	this.params = {};
+	this.paramsOrdered = [];
 	
 	this.options = options;
 }
@@ -3402,8 +3440,11 @@ Tag.prototype.update = function ( required )
 
 Tag.prototype.toString = function ( required )
 {
-	if ( this.tags || this.customs )
+	if ( this.hiddens || this.tags || this.customs )
 	{
+		var outputItems = []
+		var output = '';
+		
 		if ( this.tags && this.tags instanceof Array )
 		{
 			var output = '';
@@ -3413,18 +3454,26 @@ Tag.prototype.toString = function ( required )
 				var value = this.tags[i].value.toString ( );
 				if ( value !== '' )
 				{
-					if ( output !== '' )
-						output += ','
-					output += value
+					outputItems.push ( value )
 				}
 			}
 
-			if ( output !== '' )
-				output = '[' + output + ']';
+			if ( outputItems.length )
+				output = '[' + outputItems.join ( ',' ) + ']';
 		}
 		else
 		{
-			var output = '';
+			if ( this.hiddens )
+			{
+				for ( var tag in this.hiddens )
+				{
+					var value = this.hiddens[tag];
+					if ( value !== '' )
+					{
+						outputItems.push ( tag + ':' + value )
+					}
+				}
+			}
 
 			if ( this.tags )
 			{
@@ -3433,9 +3482,7 @@ Tag.prototype.toString = function ( required )
 					var value = this.tags[tag].value.toString ( );
 					if ( value !== '' )
 					{
-						if ( output !== '' )
-							output += ','
-						output += tag + ':' + value
+						outputItems.push ( tag + ':' + value )
 					}
 				}
 			}
@@ -3450,21 +3497,19 @@ Tag.prototype.toString = function ( required )
 						var value = this.customs[i].value.toString ( );
 						if ( name !== '' )
 						{
-							if ( output !== '' )
-								output += ','
-							output += name + ( value !== '' ? ':' + value : '' )
+							outputItems.push ( name + ( value !== '' ? ':' + value : '' ) )
 						}
 					}
 				}
 			}
 
-			if ( output !== '' )
-				output = '{' + output + '}';
+			if ( outputItems.length )
+				output = '{' + outputItems.join ( ',' ) + '}';
 		}
 
 		return output;
 	}
-
+	
 	return ( this.tag && this.tag.toString ( required ) ) || '';
 }
 
@@ -3644,6 +3689,9 @@ TagList.prototype = new Tag ( );
 
 TagList.prototype.addItem = function ( from )
 {
+	if ( this.options.maxCount != null && this.tags.length >= this.options.maxCount )
+		return;
+		
 	//var table = this.createTable ( this.div, true );
 	var div = document.createElement ( 'div' );
 	//div.className = 'mc-tag-options';
@@ -3867,7 +3915,6 @@ TagEntity.prototype.update = function ( )
 	else
 		this.container.style.display = '';
 	
-	
 	var entity;
 	
 	for ( var i = 0; i < entities.length; i++ )
@@ -3884,9 +3931,112 @@ TagEntity.prototype.update = function ( )
 		}
 	}
 	
+	if ( this.tag.tag )
+	{
+		this.tag.tag.hiddens = {
+			id: entityName
+		}
+	}
+	
+	
 	this.selector.update ( );
 	this.id.update ( );
 	this.tag.update ( );
+}
+
+function TagItem ( container, from, options )
+{
+	this.init ( container, '', options );
+	
+	var table = document.createElement ( 'table' );
+	table.className = 'mc-tag-options';
+	container.appendChild ( table );
+	
+	this.createParam ( table, 'item metadata', 'Item', from, { optional: this.options.optional, defaultValue: this.options.defaultValue } );
+	this.createParam ( table, 'item', 'Text', from, { optional: this.options.optional, defaultValue: 0 } );
+	this.createParam ( table, 'metadata', 'Text', from, { optional: this.options.optional, defaultValue: 0 } );
+	if ( options.count )
+		this.createParam ( table, 'count', 'Number', from, { optional: this.options.optional, defaultValue: 1 } );
+	if ( options.slot )
+		this.createParam ( table, 'slot', 'Number', from, { optional: this.options.optional, defaultValue: 0, min: 0, max: options.slotCount } );
+	this.createParam ( table, 'dataTag', 'DataTag', from, { optional: true } );
+	
+	this.tag = this.params.dataTag.value
+}
+
+TagItem.prototype = new Tag ( );
+
+TagItem.prototype.update = function ( )
+{
+	var selectValue = this.params['item metadata'].value.value.toString ( );
+	
+	if ( selectValue === '0' )
+	{
+		this.params.item.container.style.display = '';
+		this.params.metadata.container.style.display = '';
+	}
+	else
+	{
+		var itemMetadata = selectValue.split ( ' ' );
+
+		this.params.item.value.setValue ( itemMetadata[0] || '' );
+		this.params.item.container.style.display = 'none';
+		
+		if ( itemMetadata[1] !== '*' )
+		{
+			this.params.metadata.value.setValue ( itemMetadata[1] || '' );
+			this.params.metadata.container.style.display = 'none';
+		}
+	}
+	
+	var itemId = this.params.item.value.value;
+	var metadata = this.params.metadata.value.value;
+	if ( this.params.count )
+		var count = this.params.count.value.value;
+	if ( this.params.slot )
+		var slot = this.params.slot.value.value;
+	
+	if ( itemId == '' )
+		this.params.dataTag.container.style.display = 'none';
+	else
+		this.params.dataTag.container.style.display = '';
+	
+	var item;
+	
+	for ( var i = 0; i < items.length; i++ )
+	{
+		item = items[i];
+		
+		if ( item.id == itemId )
+		{
+			var structure = item.structure || 'Item'
+			if ( structure != this.params.dataTag.value.type )
+				this.params.dataTag.value.updateType ( structure )
+			break
+		}
+	}
+	
+	if ( this.tag.tag )
+	{
+		if ( !this.tag.tag.hiddens || itemId == '' )
+			this.tag.tag.hiddens = {};
+			
+		if ( itemId !== '' )
+		{
+			this.tag.tag.hiddens.id = itemId;
+		
+			if ( metadata == '0' )
+				delete this.tag.tag.hiddens.Damage;
+			else
+				this.tag.tag.hiddens.Damage = metadata;
+			if ( count !== undefined )
+				this.tag.tag.hiddens.Count = count;
+			if ( slot !== undefined )
+				this.tag.tag.hiddens.Slot = slot;
+		}
+	}
+
+	this.updateLoop ( );
 }
 
 function TagReplace ( container, from, options )
@@ -4171,6 +4321,7 @@ tags = {
 	'CommandSelector': TagCommandSelector,
 	'Enchantment': TagEnchantment,
 	'Entity': TagEntity,
+	'Item': TagItem,
 	'Replace': TagReplace,
 	'RGB': TagShort
 }
@@ -5201,7 +5352,7 @@ entities = [
 	},
 	'Minecarts',
 	{
-		id: 'MinecartRidable',
+		id: 'MinecartRideable',
 		name: 'Minecart',
 		structure: 'EntityMinecart'
 	},

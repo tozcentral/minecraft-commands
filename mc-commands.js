@@ -820,7 +820,8 @@ function CommandPlaySound ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'sound', 'Sound', from );
+	this.createParam ( container, 'sound id', 'List', from, { ignoreValue: true, items: sounds, custom: true } );
+	this.createParam ( container, 'sound', 'Text', from, { ignoreIfHidden: false } );
 	this.createParam ( container, 'player', 'PlayerSelector', from );
 	this.createParam ( container, 'x', 'Pos', from, { optional: true } );
 	this.createParam ( container, 'y', 'Pos', from, { optional: true, height: true } );
@@ -831,6 +832,22 @@ function CommandPlaySound ( container, from )
 }
 
 CommandPlaySound.prototype = new Command ( );
+
+CommandPlaySound.prototype.update = function ( )
+{
+	var selectValue = this.params['sound id'].value.value.toString ( );
+	
+	if ( selectValue === 'custom' )
+		this.params.sound.container.style.display = '';
+	else
+	{
+		this.params.sound.container.style.display = 'none';
+		
+		this.params.sound.value.setValue ( selectValue );
+	}
+
+	this.updateLoop ( );
+}
 
 function CommandSay ( container, from )
 {
@@ -1755,12 +1772,27 @@ function ParamList ( container, from, options )
 		option.appendChild ( document.createTextNode ( 'None' ) );
 		select.appendChild ( option );
 	}
-
+	
+	var item;
 	for ( var i = 0; i < options.items.length; i++ )
 	{
+		item = options.items[i];
+		
+		if ( typeof item == 'string' )
+			item = { name: item, id: item }
+		
 		option = document.createElement ( 'option' );
-		option.selected = ( options.items[i] == ( this.value || this.options.defaultValue ) )
-		option.appendChild ( document.createTextNode ( options.items[i] ) );
+		option.value = item.id
+		option.selected = ( item.id == ( this.value || this.options.defaultValue ) )
+		option.appendChild ( document.createTextNode ( item.name ) );
+		select.appendChild ( option );
+	}
+	
+	if ( this.options.custom )
+	{
+		option = document.createElement ( 'option' );
+		option.value = 'custom';
+		option.appendChild ( document.createTextNode ( 'Custom' ) );
 		select.appendChild ( option );
 	}
 
@@ -5263,6 +5295,206 @@ entities = [
 	},*/
 ]
 
+/**SOUNDS**/
+sounds = [
+	"ambient.cave.cave",
+	"ambient.weather.rain",
+	"ambient.weather.thunder",
+	"damage.fallbig",
+	"damage.fallsmall",
+	"damage.hit",
+	"dig.cloth",
+	"dig.grass",
+	"dig.gravel",
+	"dig.sand",
+	"dig.snow",
+	"dig.stone",
+	"dig.wood",
+	"fire.fire",
+	"fire.ignite",
+	"fireworks.blast",
+	"fireworks.blast_far",
+	"fireworks.largeBlast",
+	"fireworks.largeBlast_far",
+	"fireworks.launch",
+	"fireworks.twinkle",
+	"fireworks.twinkle_far",
+	"liquid.lava",
+	"liquid.lavapop",
+	"liquid.splash",
+	"liquid.swim",
+	"liquid.water",
+	"minecart.base",
+	"minecart.inside",
+	"mob.bat.death",
+	"mob.bat.hurt",
+	"mob.bat.idle",
+	"mob.bat.loop",
+	"mob.bat.takeoff",
+	"mob.blaze.breathe",
+	"mob.blaze.death",
+	"mob.blaze.hit",
+	"mob.cat.hiss",
+	"mob.cat.hitt",
+	"mob.cat.meow",
+	"mob.cat.purr",
+	"mob.cat.purreow",
+	"mob.chicken.hurt",
+	"mob.chicken.plop",
+	"mob.chicken.say",
+	"mob.chicken.step",
+	"mob.cow.hurt",
+	"mob.cow.say",
+	"mob.cow.step",
+	"mob.creeper.death",
+	"mob.creeper.say",
+	"mob.enderdragon.end",
+	"mob.enderdragon.growl",
+	"mob.enderdragon.hit",
+	"mob.enderdragon.wings",
+	"mob.endermen.death",
+	"mob.endermen.hit",
+	"mob.endermen.idle",
+	"mob.endermen.portal",
+	"mob.endermen.scream",
+	"mob.endermen.stare",
+	"mob.ghast.affectionate_scream",
+	"mob.ghast.charge",
+	"mob.ghast.death",
+	"mob.ghast.fireball",
+	"mob.ghast.moan",
+	"mob.ghast.scream",
+	"mob.horse.angry",
+	"mob.horse.armor",
+	"mob.horse.breathe",
+	"mob.horse.death",
+	"mob.horse.donkey.angry",
+	"mob.horse.donkey.death",
+	"mob.horse.donkey.hit",
+	"mob.horse.donkey.idle",
+	"mob.horse.gallop",
+	"mob.horse.hit",
+	"mob.horse.idle",
+	"mob.horse.jump",
+	"mob.horse.land",
+	"mob.horse.leather",
+	"mob.horse.skeleton.death",
+	"mob.horse.skeleton.hit",
+	"mob.horse.skeleton.idle",
+	"mob.horse.soft",
+	"mob.horse.wood",
+	"mob.horse.zombie.death",
+	"mob.horse.zombie.hit",
+	"mob.horse.zombie.idle",
+	"mob.irongolem.death",
+	"mob.irongolem.hit",
+	"mob.irongolem.throw",
+	"mob.irongolem.walk",
+	"mob.magmacube.big",
+	"mob.magmacube.jump",
+	"mob.magmacube.small",
+	"mob.pig.death",
+	"mob.pig.say",
+	"mob.pig.step",
+	"mob.sheep.say",
+	"mob.sheep.shear",
+	"mob.sheep.step",
+	"mob.silverfish.hit",
+	"mob.silverfish.kill",
+	"mob.silverfish.say",
+	"mob.silverfish.step",
+	"mob.skeleton.death",
+	"mob.skeleton.hurt",
+	"mob.skeleton.say",
+	"mob.skeleton.step",
+	"mob.slime.attack",
+	"mob.slime.big",
+	"mob.slime.small",
+	"mob.spider.death",
+	"mob.spider.say",
+	"mob.spider.step",
+	"mob.villager.death",
+	"mob.villager.haggle",
+	"mob.villager.hit",
+	"mob.villager.idle",
+	"mob.villager.no",
+	"mob.villager.yes",
+	"mob.wither.death",
+	"mob.wither.hurt",
+	"mob.wither.idle",
+	"mob.wither.shoot",
+	"mob.wither.spawn",
+	"mob.wolf.bark",
+	"mob.wolf.death",
+	"mob.wolf.growl",
+	"mob.wolf.howl",
+	"mob.wolf.hurt",
+	"mob.wolf.panting",
+	"mob.wolf.shake",
+	"mob.wolf.step",
+	"mob.wolf.whine",
+	"mob.zombie.death",
+	"mob.zombie.hurt",
+	"mob.zombie.infect",
+	"mob.zombie.metal",
+	"mob.zombie.remedy",
+	"mob.zombie.say",
+	"mob.zombie.step",
+	"mob.zombie.unfect",
+	"mob.zombie.wood",
+	"mob.zombie.woodbreak",
+	"mob.zombiepig.zpig",
+	"mob.zombiepig.zpigangry",
+	"mob.zombiepig.zpigdeath",
+	"mob.zombiepig.zpighurt",
+	"note.bass",
+	"note.bassattack",
+	"note.bd",
+	"note.harp",
+	"note.hat",
+	"note.pling",
+	"note.snare",
+	"portal.portal",
+	"portal.travel",
+	"portal.trigger",
+	"random.anvil_break",
+	"random.anvil_land",
+	"random.anvil_use",
+	"random.bow",
+	"random.bowhit",
+	"random.break",
+	"random.breath",
+	"random.burp",
+	"random.chestclosed",
+	"random.chestopen",
+	"random.classic_hurt",
+	"random.click",
+	"random.door_close",
+	"random.door_open",
+	"random.drink",
+	"random.eat",
+	"random.explode",
+	"random.fizz",
+	"random.fuse",
+	"random.glass",
+	"random.levelup",
+	"random.orb",
+	"random.pop",
+	"random.splash",
+	"random.successful_hit",
+	"random.wood_click",
+	"step.cloth",
+	"step.grass",
+	"step.gravel",
+	"step.ladder",
+	"step.sand",
+	"step.snow",
+	"step.stone",
+	"step.wood",
+	"tile.piston.in",
+	"tile.piston.out"
+]
+
 /**MCCOMMANDS**/
 var mcCommands = {
 	'commands': commands,
@@ -5272,6 +5504,7 @@ var mcCommands = {
 	'items': items,
 	'blocks': blocks,
 	'entities': entities,
+	'sounds': sounds,
 	'selectors': selectors,
 	'create': createSelector
 };

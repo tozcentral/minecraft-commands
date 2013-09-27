@@ -1760,6 +1760,7 @@ function ParamList ( container, from, options )
 	
 	var option;
 
+	this.item = null;
 	this.value = from && from.value;
 
 	var select = document.createElement ( 'select' )
@@ -1782,8 +1783,11 @@ function ParamList ( container, from, options )
 			item = { name: item, id: item }
 		
 		option = document.createElement ( 'option' );
-		option.value = item.id
+		option.value = item.id;
+		option.setAttribute('data-index', i);
 		option.selected = ( item.id == ( this.value || this.options.defaultValue ) )
+		if ( option.selected )
+			this.item = item;
 		option.appendChild ( document.createTextNode ( item.name ) );
 		select.appendChild ( option );
 	}
@@ -1796,7 +1800,7 @@ function ParamList ( container, from, options )
 		select.appendChild ( option );
 	}
 
-	this.value = select.value;
+	this.setValue ( select.value );
 	this.input = select;
 
 	container.appendChild ( select );
@@ -1812,6 +1816,11 @@ ParamList.prototype.update = function ( nextHasValue )
 
 	if ( required && this.value === '' )
 		this.setError ( true );
+		
+	var option = this.input.selectedOptions[0];
+		
+	if ( option )
+		this.item = option.hasAttribute ( 'data-index' ) ? this.options.items[option.getAttribute ( 'data-index' )] || null : null
 }
 
 function ParamPlayerSelector ( container, from, options )

@@ -6131,23 +6131,23 @@ potions = [
 {id:23,name:"Saturation"}
 ];
 colors = [
-{stringId:"black"},
-{stringId:"dark_blue"},
-{stringId:"dark_green"},
-{stringId:"dark_aqua"},
-{stringId:"dark_red"},
-{stringId:"dark_purple"},
-{stringId:"gold"},
-{stringId:"gray"},
-{stringId:"dark_gray"},
-{stringId:"blue"},
-{stringId:"green"},
-{stringId:"aqua"},
-{stringId:"red"},
-{stringId:"light_purple"},
-{stringId:"yellow"},
-{stringId:"white"},
-{stringId:"reset"}
+{stringId:"black",name:"Black"},
+{stringId:"dark_blue",name:"Dark blue"},
+{stringId:"dark_green",name:"Dark green"},
+{stringId:"dark_aqua",name:"Dark aqua"},
+{stringId:"dark_red",name:"Dark red"},
+{stringId:"dark_purple",name:"Dark purple"},
+{stringId:"gold",name:"Gold"},
+{stringId:"gray",name:"Gray"},
+{stringId:"dark_gray",name:"Dark gray"},
+{stringId:"blue",name:"Blue"},
+{stringId:"green",name:"Green"},
+{stringId:"aqua",name:"Aqua"},
+{stringId:"red",name:"Red"},
+{stringId:"light_purple",name:"Light purple"},
+{stringId:"yellow",name:"Yellow"},
+{stringId:"white",name:"White"},
+{stringId:"reset",name:"Reset"}
 ];
 
 /**ENTITIES**/

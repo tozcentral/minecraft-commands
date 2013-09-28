@@ -2884,6 +2884,40 @@ function StructureInventory ( )
 	};
 }
 
+function StructureMobSpawner ( )
+{
+	this.structure = {
+		'SpawnCount': 'Short',
+		'SpawnRange': 'Short',
+		'Delay': 'Short',
+		'MinSpawnDelay': 'Short',
+		'MaxSpawnDelay': 'Short',
+		'MaxNearbyEntities': 'Short',
+		'RequiredPlayerRange': 'Short',
+		'EntityId': {
+			type: 'Entity',
+			options: {
+				textOnly: true
+			}
+		},
+		'SpawnData': {
+			type: 'Compound',
+			options: {
+				structure: (new structures['Entity'] ( )).structure
+			}
+		},
+		'SpawnPotentials': {
+			type: 'List',
+			options: {
+				type: 'Entity',
+				options: {
+					mobSpawnerPotentials: true
+				}
+			}
+		}
+	};
+}
+
 /* Block Structures */
 
 function StructureBlock ( )
@@ -2970,6 +3004,7 @@ function StructureBlockHopper ( )
 function StructureBlockMobSpawner ( )
 {
 	this.structure = (new structures['Block'] ( )).structure;
+	this.structure = mergeObjects ( this.structure, (new structures['MobSpawner'] ( )).structure );
 }
 
 function StructureBlockMusic ( )
@@ -3038,8 +3073,10 @@ function StructureItem ( )
 		options: {
 			type: 'Compound',
 			options: {
-				'id': 'Enchantment',
-				'lvl': 'Short'
+				structure: {
+					'id': 'Enchantment',
+					'lvl': 'Short'
+				}
 			}
 		}
 	}
@@ -3049,8 +3086,10 @@ function StructureItem ( )
 		options: {
 			type: 'Compound',
 			options: {
-				'id': 'Enchantment',
-				'lvl': 'Short'
+				structure: {
+					'id': 'Enchantment',
+					'lvl': 'Short'
+				}
 			}
 		}
 	}
@@ -3060,10 +3099,12 @@ function StructureItem ( )
 	this.structure['display'] = {
 		type: 'Compound',
 		options: {
-			'Name': 'String',
-			'Lore': {
-				type: 'List',
-				options: 'String'
+			structure: {
+				'Name': 'String',
+				'Lore': {
+					type: 'List',
+					options: 'String'
+				}
 			}
 		}
 	}
@@ -3103,10 +3144,12 @@ function StructureItemPotion ( )
 		options: {
 			type: 'Compound',
 			options: {
-				'Id': 'Byte',
-				'Amplifier': 'Byte',
-				'Duration': 'Int',
-				'Ambient': 'Checkbox'
+				structure: {
+					'Id': 'Byte',
+					'Amplifier': 'Byte',
+					'Duration': 'Int',
+					'Ambient': 'Boolean'
+				}
 			}
 		}
 	};
@@ -3145,18 +3188,25 @@ function StructureItemFirework ( )
 	this.structure.Fireworks = {
 		type: 'Compound',
 		options: {
-			'Flight': 'Byte',
-			'Explosions': {
-				'Flicker': 'Checkbox',
-				'Trail': 'Checkbox',
-				'Type': 'Byte',
-				'Colors': {
-					type: 'List',
-					options: 'Int'
-				},
-				'FadeColors': {
-					type: 'List',
-					options: 'Int'
+			structure: {
+				'Flight': 'Byte',
+				'Explosions': {
+					type: 'Compound',
+					options: {
+						structure: {
+							'Flicker': 'Checkbox',
+							'Trail': 'Checkbox',
+							'Type': 'Byte',
+							'Colors': {
+								type: 'List',
+								options: 'Int'
+							},
+							'FadeColors': {
+								type: 'List',
+								options: 'Int'
+							}
+						}
+					}
 				}
 			}
 		}
@@ -3219,6 +3269,72 @@ function StructureEntityFull ( )
 function StructureEntityMob ( )
 {
 	this.structure = (new structures['Entity'] ( )).structure;
+	
+	this.structure['Health'] = 'Float'
+	this.structure['HealF'] = 'Float'
+	this.structure['AbsorptionAmount'] = 'Float'
+	this.structure['AttackTime'] = 'Short'
+	this.structure['HurtTime'] = 'Short'
+	this.structure['DeathTime'] = 'Short'
+	
+	this.structure['Attributes'] = {
+		type: 'List',
+		options: {
+			type: 'Compound'
+		}
+	}
+	
+	this.structure['ActiveEffects'] = {
+		type: 'List',
+		options: {
+			type: 'Compound',
+			options: {
+				structure: {
+					'Id': 'Byte',
+					'Amplifier': 'Byte',
+					'Duration': 'Int',
+					'Ambient': 'Boolean'
+				}
+			}
+		}
+	}
+	
+	this.structure['Equipment'] = {
+		type: 'List',
+		options: {
+			type: 'Item',
+			count: 5,
+			options: {
+				count: true
+			}
+		}
+	}
+	
+	this.structure['DropChance'] = {
+		type: 'List',
+		options: {
+			type: 'Float',
+			count: 5
+		}
+	}
+	
+	this.structure['CanPickUpLoot'] = 'Boolean'
+	this.structure['PersistenceRequired'] = 'Boolean'
+	this.structure['CustomName'] = 'String'
+	this.structure['CustomNameVisible'] = 'Boolean'
+	this.structure['Leashed'] = 'Boolean'
+	this.structure['Leash'] = {
+		type: 'Compound',
+		options: {
+			structure: {
+				'UUIDMost': 'Long',
+				'UUIDLeast': 'Long',
+				'X': 'Int',
+				'Y': 'Int',
+				'Z': 'Int'
+			}
+		}
+	}
 }
 
 function StructureEntityMobBreedable ( )
@@ -3342,19 +3458,35 @@ function StructureEntityMobVillager ( )
 	this.structure['Offers'] = {
 		type: 'Compound',
 		options: {
-			'Recipes': {
-				type: 'List',
-				options: {
-					type: 'Compound',
+			structure: {
+				'Recipes': {
+					type: 'List',
 					options: {
-						'maxUses': 'Int',
-						'uses': 'Int',
-						/*'buy': {
-						},
-						'buyB': {
-						},
-						'sell': {
-						}*/
+						type: 'Compound',
+						options: {
+							structure: {
+								'maxUses': 'Int',
+								'uses': 'Int',
+								'buy': {
+									type: 'Item',
+									options: {
+										count: true
+									}
+								},
+								'buyB': {
+									type: 'Item',
+									options: {
+										count: true
+									}
+								},
+								'sell': {
+									type: 'Item',
+									options: {
+										count: true
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -3386,14 +3518,14 @@ function StructureEntityMobPigZombie ( )
 
 function StructureEntityProjectileGeneric ( )
 {
-	this.structure = {
+	this.structure = mergeObjects ( {
 		'xTile': 'Short',
 		'yTile': 'Short',
 		'zTile': 'Short',
 		'inTile': 'Byte',
 		'shake': 'Byte',
 		'inGround': 'Byte'
-	};
+	}, (new structures['Entity'] ( )).structure );
 }
 
 function StructureEntityProjectileOwned ( )
@@ -3486,6 +3618,7 @@ function StructureEntityMinecartTNT ( )
 function StructureEntityMinecartSpawner ( )
 {
 	this.structure = (new structures['EntityMinecart'] ( )).structure;
+	this.structure = mergeObjects ( this.structure, (new structures['MobSpawner'] ( )).structure );
 }
 
 /* Other Entity Structures */
@@ -3517,19 +3650,34 @@ function StructureEntityFirework ( )
 	this.structure = (new structures['Entity'] ( )).structure;
 	this.structure['Life'] = 'Int';
 	this.structure['LifeTime'] = 'Compound';
-	//this.structure['FireworksItem'] = ;
+	this.structure['FireworksItem'] = {
+		type: 'Item',
+		options: {
+			count: true
+		}
+	};
 }
 
 function StructureEntityItem ( )
 {
 	this.structure = (new structures['Entity'] ( )).structure
-	//this.structure.Item
+	this.structure.Item = {
+		type: 'Item',
+		options: {
+			count: true
+		}
+	}
 }
 
 function StructureEntityItemFrame ( )
 {
 	this.structure = (new structures['EntityPaintingLike'] ( )).structure;
-	//this.structure['Item'] = 'Byte';
+	this.structure['Item'] = {
+		type: 'Item',
+		options: {
+			count: true
+		}
+	};
 	this.structure['ItemDropChance'] = 'Float';
 	this.structure['ItemRotation'] = 'Byte';
 }
@@ -3854,7 +4002,7 @@ TagList.prototype.addItem = function ( from )
 	var div = document.createElement ( 'div' );
 	//div.className = 'mc-tag-options';
 
-	if ( this.count === '*' )
+	if ( this.options.count === '*' )
 	{
 		var cell = document.createElement ( 'span' );
 		cell.appendChild ( document.createTextNode ( 'Remove' ) );
@@ -4042,13 +4190,16 @@ function TagEntity ( container, from, options )
 	
 	this.selector = new params['Entity'] ( container, from && from.selector, { optional: this.options.optional } );
 	this.id = new params['Text'] ( container, from && from.id, { optional: this.options.optional } );
+	if ( this.options.mobSpawnerPotentials )
+		this.weight = new params['Number'] ( container, from && from.id, { optional: this.options.optional, min: 1, defaultValue: 1 } );
 	
 	var div = document.createElement ( 'div' )
 	container.appendChild ( div )
 	
 	this.container = div;
 	
-	this.tag = new params['DataTag'] ( div, from && from.tag, { optional: true} );
+	if ( !this.options.textOnly )
+		this.tag = new params['DataTag'] ( div, from && from.tag, { optional: true} );
 }
 
 TagEntity.prototype = new Tag ( );
@@ -4073,23 +4224,26 @@ TagEntity.prototype.update = function ( )
 	else
 		this.container.style.display = '';
 	
-	var entity;
-	
-	for ( var i = 0; i < entities.length; i++ )
+	if ( !this.options.textOnly )
 	{
-		entity = entities[i];
+		var entity;
 		
-		if ( typeof entity !== 'string' && entity.id == entityName )
+		for ( var i = 0; i < entities.length; i++ )
 		{
-			var structure = entity.structure || {}
+			entity = entities[i];
 			
-			if ( structure != this.tag.type )
-				this.tag.updateType ( structure )
-			break
+			if ( typeof entity !== 'string' && entity.id == entityName )
+			{
+				var structure = entity.structure || {}
+				
+				if ( structure != this.tag.type )
+					this.tag.updateType ( structure )
+				break
+			}
 		}
 	}
 	
-	if ( this.tag.tag )
+	if ( !this.options.mobSpawnerPotentials && !this.options.textOnly && this.tag.tag )
 	{
 		this.tag.tag.hiddens = {
 			id: entityName
@@ -4099,7 +4253,28 @@ TagEntity.prototype.update = function ( )
 	
 	this.selector.update ( );
 	this.id.update ( );
-	this.tag.update ( );
+	if ( this.options.mobSpawnerPotentials )
+		this.weight.update ( )
+	if ( !this.options.textOnly )
+		this.tag.update ( );	
+}
+
+TagEntity.prototype.toString = function ( required )
+{
+	if ( this.options.mobSpawnerPotentials )
+	{
+		var entityName = this.id.value;
+		if ( entityName == '' )
+			return '';
+			
+		var tagText = this.tag.toString ( );
+			
+		return '{Type:"' + entityName + '",Weight:' + this.weight.toString(true) + ( tagText != '' ? ',Properties:' + tagText : '' ) + '}'
+	}
+	else if ( this.options.textOnly )
+		return this.id.toString ( required );
+	else
+		return this.tag.toString ( required )
 }
 
 function TagItem ( container, from, options )
@@ -4113,9 +4288,9 @@ function TagItem ( container, from, options )
 	this.createParam ( table, 'item metadata', 'Item', from, { optional: this.options.optional, defaultValue: this.options.defaultValue } );
 	this.createParam ( table, 'item', 'Text', from, { optional: this.options.optional, defaultValue: 0 } );
 	this.createParam ( table, 'metadata', 'Text', from, { optional: this.options.optional, defaultValue: 0 } );
-	if ( options.count )
+	if ( this.options.count )
 		this.createParam ( table, 'count', 'Number', from, { optional: this.options.optional, defaultValue: 1 } );
-	if ( options.slot )
+	if ( this.options.slot )
 		this.createParam ( table, 'slot', 'Number', from, { optional: this.options.optional, defaultValue: 0, min: 0, max: options.slotCount } );
 	this.createParam ( table, 'dataTag', 'DataTag', from, { optional: true } );
 	
@@ -4174,7 +4349,7 @@ TagItem.prototype.update = function ( )
 		}
 	}
 	
-	if ( this.tag.tag )
+	/*if ( this.tag.tag )
 	{
 		if ( !this.tag.tag.hiddens || itemId == '' )
 			this.tag.tag.hiddens = {};
@@ -4192,9 +4367,42 @@ TagItem.prototype.update = function ( )
 			if ( slot !== undefined )
 				this.tag.tag.hiddens.Slot = slot;
 		}
-	}
+	}*/
 
 	this.updateLoop ( );
+}
+
+TagItem.prototype.toString = function ( ) 
+{
+	var output = [];
+	
+	var itemId = this.params.item.value.toString ( );
+	var metadata = this.params.metadata.value.toString ( );
+	if ( this.params.count )
+		var count = this.params.count.value.toString ( true );
+	if ( this.params.slot )
+		var slot = this.params.slot.value.toString ( );
+	if ( this.params.dataTag )
+		var tag = this.params.dataTag.value.toString ( );
+		
+	if ( itemId !== '' )
+	{
+		output.push ( 'id:' + itemId );
+	
+		if ( metadata == '0' )
+			output.push ( 'Damage:' + metadata );
+			
+		if ( count !== undefined )
+			output.push ( 'Count:' + count );
+			
+		if ( slot !== undefined )
+			output.push ( 'Slot:' + slot );
+			
+		if ( tag !== '' )
+			output.push ( 'tag:' + tag );
+	}
+	
+	return output.length ? '{' + output.join(',') + '}' : '';
 }
 
 function TagReplace ( container, from, options )
@@ -4487,6 +4695,7 @@ tags = {
 /**STRUCTURE**/
 structures = {
 	'Inventory': StructureInventory,
+	'MobSpawner': StructureMobSpawner,
 	
 	'Block': StructureBlock,
 	'BlockNameable': StructureBlockNameable,

@@ -1811,15 +1811,15 @@ function ParamList ( container, from, options )
 		item = options.items[i];
 		
 		if ( typeof item == 'string' )
-			item = { name: item, id: item }
+			item = { name: item, stringId: item }
 		
 		option = document.createElement ( 'option' );
-		option.value = item.id;
+		option.value = item.stringId || item.id;
 		option.setAttribute('data-index', i);
-		option.selected = ( item.id == ( this.value || this.options.defaultValue ) )
+		option.selected = ( ( item.stringId || item.id ) == ( this.value || this.options.defaultValue ) )
 		if ( option.selected )
 			this.item = item;
-		option.appendChild ( document.createTextNode ( item.name ) );
+		option.appendChild ( document.createTextNode ( item.name || item.stringId || item.id ) );
 		select.appendChild ( option );
 	}
 	
@@ -2133,7 +2133,7 @@ function ParamRawMessage ( container, from, options )
 	
 	this.createParam ( table, 'text', 'Text', from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true, hasSpecial: true } );
 	this.createParam ( table, 'translate', 'List', from, { group: 'text', groupIndex: 1, groupPrefix: this.groupPrefix, items: translatables, quote: true } );
-	this.createParam ( table, 'color', 'Text', from, { optional: true } );
+	this.createParam ( table, 'color', 'List', from, { optional: true, items: colors } );
 	this.createParam ( table, 'bold', 'Boolean', from, { optional: true } );
 	this.createParam ( table, 'underlined', 'Boolean', from, { optional: true } );
 	this.createParam ( table, 'italic', 'Boolean', from, { optional: true } );
@@ -6130,6 +6130,25 @@ potions = [
 {id:22,name:"Absorption"},
 {id:23,name:"Saturation"}
 ];
+colors = [
+{stringId:"black"},
+{stringId:"dark_blue"},
+{stringId:"dark_green"},
+{stringId:"dark_aqua"},
+{stringId:"dark_red"},
+{stringId:"dark_purple"},
+{stringId:"gold"},
+{stringId:"gray"},
+{stringId:"dark_gray"},
+{stringId:"blue"},
+{stringId:"green"},
+{stringId:"aqua"},
+{stringId:"red"},
+{stringId:"light_purple"},
+{stringId:"yellow"},
+{stringId:"white"},
+{stringId:"reset"}
+];
 
 /**ENTITIES**/
 entities = [
@@ -7986,6 +8005,7 @@ var mcCommands = {
 	'potions': potions,
 	'sounds': sounds,
 	'translatables': translatables,
+	'colors': colors,
 	'selectors': selectors,
 	'create': createSelector
 };

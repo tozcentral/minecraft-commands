@@ -576,7 +576,7 @@ function CommandAchievement ( container, from )
 
 	this.createParam ( container, 'give', 'Static', from, { defaultValue: 'give' }  );
 	//this.createParam ( container, 'achievement or statistic', 'Achievement', from );
-	this.createParam ( container, 'achievement or statistic', 'Select', from, { items: [{group:'Achievements'}].concat ( achievements, {group:'Statistics'}, statistics ), editable: true, custom: true } );
+	this.createParam ( container, 'achievement or statistic', 'Select', from, { items: [{group:'Achievements'}].concat ( achievements, {group:'Statistics'}, statistics ), custom: true } );
 	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
 }
 
@@ -4657,6 +4657,7 @@ function TagList ( container, from, options )
 	options = mergeObjects ( options, defaultOptions );
 	
 	this.init ( container, '', options )
+	
 	/*this.type = structure.type || structure;
 	this.children = structure.children || null;
 	this.count = structure.count || '*';
@@ -4776,12 +4777,16 @@ TagList.prototype.toString = function ( )
 		}
 		
 		var output = [];
-
-		for ( var i = 0; i < this.tags.length; i++ )
+		
+		for ( var i = this.tags.length - 1; i >= 0; i-- )
 		{
 			var value = this.tags[i].value.toString ( required );
 			if ( value !== '' )
-				output.push ( value )
+			{
+				if ( this.options.count != '*' )
+					required = true;
+				output.unshift ( value )
+			}
 		}
 
 		if ( output.length )
@@ -5079,7 +5084,7 @@ TagItem.prototype.update = function ( )
 	this.updateLoop ( );
 }
 
-TagItem.prototype.toString = function ( ) 
+TagItem.prototype.toString = function ( required ) 
 {
 	var output = [];
 	
@@ -5109,7 +5114,7 @@ TagItem.prototype.toString = function ( )
 			output.push ( 'tag:' + tag );
 	}
 	
-	return output.length ? '{' + output.join(',') + '}' : '';
+	return output.length ? '{' + output.join(',') + '}' : ( required ? '{}' : '' );
 }
 
 function TagPotion ( container, from, options )

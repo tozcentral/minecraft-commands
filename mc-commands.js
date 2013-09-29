@@ -4,7 +4,7 @@
 		Add TagAttribute and TagEffect for Mobs etc.
 		Move items in TagList up and down.
 		ParamSelect option for custom editing where it searches from list with drop down.
-		Make it work in IE
+		Make it work in all browsers
 **/
 
 (function ( document, window, undefined ) {

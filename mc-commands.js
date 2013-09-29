@@ -1,3 +1,12 @@
+/**@TODO
+		NBTs need checking
+		Add default values to NBTs.
+		Add TagAttribute and TagEffect for Mobs etc.
+		Move items in TagList up and down.
+		ParamSelect option for custom editing where it searches from list with drop down.
+		Make it work in IE
+**/
+
 (function ( document, window, undefined ) {
 
 var commands = {};

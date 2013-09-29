@@ -9,6 +9,20 @@
 
 (function ( document, window, undefined ) {
 
+function addEvent ( element, event, callback )
+{
+	if ( element.addEventListener )
+		element.addEventListener ( event, callback, false );
+	else if ( element.attachEvent )
+		element.attachEvent ( 'on' + event, callback );
+}
+
+function emptyElement ( element )
+{
+	while ( element.firstChild )
+		element.removeChild ( element.firstChild );
+}
+
 var commands = {};
 var params = {};
 var tags = {};
@@ -137,7 +151,7 @@ function CommandSelector ( container, text, from )
 	if ( from && from.command )
 		this.command = from.command;
 
-	this.updateCommand ( this.selector.value );
+	this.updateCommand ( this.selector.options[this.selector.selectedIndex].value );
 }
 
 CommandSelector.prototype.onSelectorChange = function ( e )
@@ -145,7 +159,7 @@ CommandSelector.prototype.onSelectorChange = function ( e )
 	e = e || window.event;
 	var target = e.target || e.srcElement;
 
-	var command = target.value;
+	var command = target.options[target.selectedIndex].value;
 
 	if ( !command )
 		return;
@@ -159,21 +173,24 @@ CommandSelector.prototype.onSelectorChange = function ( e )
 
 CommandSelector.prototype.update = function ( )
 {
-	this.command.update ( );
+	this.command && this.command.update ( );
 }
 
 CommandSelector.prototype.updateCommand = function ( command )
 {
 	var options = this.options;
 
-	options.innerHTML = '';
+	emptyElement ( options );
+	
+	if ( commands[command] )
+	{
+		this.selector.value = command;
 
-	this.selector.value = command;
-
-	if ( typeof commands[command] == 'function' )
-		this.command = new commands[command] ( options, this.command );
-	else
-		this.command = new commands['Generic'] ( options, command, this.command );
+		if ( typeof commands[command] == 'function' )
+			this.command = new commands[command] ( options, this.command );
+		else
+			this.command = new commands['Generic'] ( options, command, this.command );
+	}
 }
 
 CommandSelector.prototype.createHTML = function ( container )
@@ -182,7 +199,7 @@ CommandSelector.prototype.createHTML = function ( container )
 
 	var selector = document.createElement ( 'select' );
 	selector.className = 'mc-command-selector';
-	selector.addEventListener ( 'change', ( function ( commandSelector ) { return function ( e ) { commandSelector.onSelectorChange ( e ) } } ) ( this ) );
+	addEvent ( selector,  'change', ( function ( commandSelector ) { return function ( e ) { commandSelector.onSelectorChange ( e ) } } ) ( this ) );
 	container.appendChild ( selector );
 
 	for ( var command in commands )
@@ -202,7 +219,7 @@ CommandSelector.prototype.createHTML = function ( container )
 
 CommandSelector.prototype.toString = function ( )
 {
-	return this.command.toString ( );
+	return this.command ? this.command.toString ( ) : '';
 }
 
 function Command ( )
@@ -436,7 +453,7 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 			var nameInput = document.createElement ( 'input' );
 			nameInput.className = 'param-name';
 			nameInput.value = name.defaultValue || fromValue && fromValue.name.input && fromValue.name.input.value || ''
-			nameInput.addEventListener ( 'change', updateCommand );
+			addEvent ( nameInput,  'change', updateCommand );
 			name.input = nameInput;
 			
 			if ( options.nameBorder )
@@ -481,7 +498,7 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 		radiobox.index = options.groupIndex
 		radiobox.checked = !this.groupExists ( options.group )
 		radiobox.style.visibility = ( this.groupRadioExists ( options.group, options.groupIndex ) ? 'hidden' : '' )
-		radiobox.addEventListener ( 'change', ( function ( command ) { return function ( e ) { command.onGroupRadioboxChange ( e ) } } ) ( this ) );
+		addEvent ( radiobox,  'change', ( function ( command ) { return function ( e ) { command.onGroupRadioboxChange ( e ) } } ) ( this ) );
 		options.groupRadiobox = this.groupRadioFirst ( options.group, options.groupIndex ) || radiobox
 		cell.appendChild ( radiobox )
 	}
@@ -498,11 +515,11 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 	{
 		var span = document.createElement ( 'span' );
 		span.appendChild ( document.createTextNode ( 'Remove' ) );
-		span.addEventListener ( 'click', ( function ( param, parent ) { return function ( e ) { param.onRemoveClick ( e, parent ) } } ) ( this, row ) );
+		addEvent ( span,  'click', ( function ( param, parent ) { return function ( e ) { param.onRemoveClick ( e, parent ) } } ) ( this, row ) );
 		cell.appendChild ( span );
 	}
 	
-	cell.addEventListener ( 'click', ( function ( param ) { return function () { param.selectGroup ( ) } } ) ( value ) );
+	addEvent ( cell,  'click', ( function ( param ) { return function () { param.selectGroup ( ) } } ) ( value ) );
 	
 	var param = {
 		name: name,
@@ -1378,7 +1395,7 @@ function CommandSpreadPlayers ( container, from )
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Player' ) );
-	button.addEventListener ( 'click', ( function ( command ) { return function ( e ) { command.onAddClick ( e ) } } ) ( this ) );
+	addEvent ( button,  'click', ( function ( command ) { return function ( e ) { command.onAddClick ( e ) } } ) ( this ) );
 	container.appendChild ( button );
 }
 
@@ -1740,7 +1757,7 @@ function ParamAchievement ( container, from, options )
 	var value = from && from.value || options && options.defaultValue;
 
 	var select = document.createElement ( 'select' )
-	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( select,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 	
 	if ( this.options.optional )
 	{
@@ -1793,7 +1810,7 @@ function ParamBlock ( container, from, options )
 	this.value = from && from.value;
 
 	var select = document.createElement ( 'select' )
-	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( select,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
 	if ( options.optional )
 	{
@@ -1837,7 +1854,7 @@ function ParamBoolean ( container, from, options )
 	var input = document.createElement ( 'input' )
 	input.type = 'checkbox'
 	input.checked = this.value == 'true'
-	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onCheckboxChange ( e ) } } ) ( this ) );
+	addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onCheckboxChange ( e ) } } ) ( this ) );
 	
 	this.input = input;
 	
@@ -1912,7 +1929,7 @@ ParamDataTag.prototype.createHTML = function ( container, showSelector )
 		
 		var selector = document.createElement ( 'select' );
 		selector.className = 'mc-player-selector';
-		selector.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
+		addEvent ( selector,  'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
 		container.appendChild ( selector );
 
 		if ( this.options.optional )
@@ -2003,7 +2020,7 @@ function ParamEnchantment ( container, from, options )
 	this.value = from && from.value;
 
 	var select = document.createElement ( 'select' )
-	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( select,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
 	if ( options.optional )
 	{
@@ -2038,7 +2055,7 @@ function ParamEntity ( container, from, options )
 	this.value = from && from.value;
 
 	var select = document.createElement ( 'select' )
-	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( select,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
 	if ( options.optional )
 	{
@@ -2091,7 +2108,7 @@ function ParamItem ( container, from, options )
 	this.value = from && from.value || '';
 
 	var select = document.createElement ( 'select' )
-	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( select,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
 	if ( options.optional )
 	{
@@ -2191,10 +2208,10 @@ ParamSelect.prototype.createEditable = function ( )
 	var options = this.options;
 	
 	var edit = document.createElement ( 'input' )
-	edit.addEventListener ( 'keyup', ( function ( param ) { return function ( e ) { param.onSearch ( e ) } } ) ( this ) );
-	edit.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
-	edit.addEventListener ( 'focus', ( function ( param ) { return function ( e ) { param.onEditFocus ( e ) } } ) ( this ) );
-	edit.addEventListener ( 'blur', ( function ( param ) { return function ( e ) { param.onEditBlur ( e ) } } ) ( this ) );
+	addEvent ( edit,  'keyup', ( function ( param ) { return function ( e ) { param.onSearch ( e ) } } ) ( this ) );
+	addEvent ( edit,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( edit,  'focus', ( function ( param ) { return function ( e ) { param.onEditFocus ( e ) } } ) ( this ) );
+	addEvent ( edit,  'blur', ( function ( param ) { return function ( e ) { param.onEditBlur ( e ) } } ) ( this ) );
 	edit.value = this.value || this.options.defaultValue || ''
 	
 	this.container.appendChild ( edit )
@@ -2210,6 +2227,8 @@ ParamSelect.prototype.createEditable = function ( )
 		list.appendChild ( option );
 	}
 	
+	
+	var parent = list;
 	var valueTemplate = this.options.value || '{id}';
 	var item;
 	for ( var i = 0; i < this.options.items.length; i++ )
@@ -2239,7 +2258,7 @@ ParamSelect.prototype.createEditable = function ( )
 		}
 		
 		option = document.createElement ( 'li' );
-		option.addEventListener ( 'click', ( function ( param ) { return function ( e ) { param.onValueChange ( e ); } } ) ( this ) );
+		addEvent ( option,  'click', ( function ( param ) { return function ( e ) { param.onValueChange ( e ); } } ) ( this ) );
 		option.className = 'mc-select-list-item'
 		option.setAttribute('data-value', value);
 		option.setAttribute('data-search', (value + (item.name || item.stringId || item.id || '' )).toLowerCase());
@@ -2311,7 +2330,7 @@ ParamSelect.prototype.createSelectable = function ( )
 	var options = this.options;
 	
 	var select = document.createElement ( 'select' )
-	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( select,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 	
 	var option;
 	
@@ -2419,7 +2438,7 @@ ParamSelect.prototype.update = function ( nextHasValue )
 	
 	if ( !this.options.editable )
 	{
-		var option = this.input.selectedOptions[0];
+		var option = this.input.options[this.input.selectedIndex];
 			
 		if ( option )
 			this.item = option.hasAttribute ( 'data-index' ) ? this.options.items[option.getAttribute ( 'data-index' )] || null : null
@@ -2448,7 +2467,7 @@ ParamPlayerSelector.prototype.createHTML = function ( container )
 
 	var selector = document.createElement ( 'select' );
 	selector.className = 'mc-player-selector';
-	selector.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
+	addEvent ( selector,  'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
 	container.appendChild ( selector );
 
 	if ( this.options.optional )
@@ -2505,7 +2524,7 @@ ParamPlayerSelector.prototype.updatePlayer = function ( player )
 {
 	var optionsContainer = this.optionsContainer;
 
-	optionsContainer.innerHTML = '';
+	emptyElement ( optionsContainer );
 	
 	if ( !this.options.optional && player == 'None' )
 		player = 'Username'
@@ -2554,12 +2573,17 @@ function ParamPos ( container, from, options )
 	var input = document.createElement ( 'input' );
 	input.type = 'checkbox'
 	input.checked = this.isRelative;
-	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onCheckChange ( e ) } } ) ( this ) );
+	addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onCheckChange ( e ) } } ) ( this ) );
 	label.appendChild ( input );
 	label.appendChild ( document.createTextNode ( ' Relative ' ) );
 
 	var input = document.createElement ( 'input' );
-	input.type = 'number'
+	try {
+		input.type = 'number'
+	}
+	catch ( e ) {
+		input.type = 'text'
+	}
 	if ( options && options.height )
 	{
 		input.min = 0;
@@ -2570,7 +2594,7 @@ function ParamPos ( container, from, options )
 	if ( options && options.defaultValue !== undefined )
 		input.placeholder = options.defaultValue;
 	input.value = this.value;
-	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 	container.appendChild ( input );
 
 	this.input = input;
@@ -2667,7 +2691,7 @@ function ParamPotion ( container, from, options )
 	this.value = from && from.value;
 
 	var select = document.createElement ( 'select' )
-	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( select,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 
 	var option = document.createElement ( 'option' );
 	option.value = 'clear';
@@ -2819,7 +2843,7 @@ ParamRawMessageEvent.prototype.createHTML = function ( container )
 
 	selector = document.createElement ( 'select' );
 	selector.className = 'mc-event-selector';
-	selector.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
+	addEvent ( selector,  'change', ( function ( param ) { return function ( e ) { param.onSelectorChange ( e ) } } ) ( this ) );
 	cell.appendChild ( selector );
 
 	if ( this.options.optional )
@@ -2932,7 +2956,7 @@ function ParamRawMessageExtras ( container, from, options )
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Extra' ) );
-	button.addEventListener ( 'click', ( function ( param ) { return function ( e ) { param.onAddButtonClick ( e ) } } ) ( this ) );
+	addEvent ( button,  'click', ( function ( param ) { return function ( e ) { param.onAddButtonClick ( e ) } } ) ( this ) );
 	container.appendChild ( button );
 
 	//this.addItem ( );
@@ -2949,7 +2973,7 @@ ParamRawMessageExtras.prototype.addItem = function ( )
 
 	var remove = document.createElement ( 'span' );
 	remove.appendChild ( document.createTextNode ( 'Remove' ) );
-	remove.addEventListener ( 'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, row ) );
+	addEvent ( remove,  'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, row ) );
 	cell.appendChild ( remove );
 
 	this.table.appendChild ( row );
@@ -3033,7 +3057,7 @@ function ParamText ( container, from, options )
 	if ( options && options.defaultValue )
 		input.placeholder = options.defaultValue;
 	input.value = this.value;
-	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 	container.appendChild ( input );
 	
 	if ( options && options.hasSpecial )
@@ -3041,7 +3065,7 @@ function ParamText ( container, from, options )
 		var span = document.createElement ( 'span' );
 		span.className = 'input-button';
 		span.appendChild ( document.createTextNode ( '§' ) )
-		span.addEventListener ( 'click', ( function ( param ) { return function ( e ) { param.onSpecialClick ( e ) } } ) ( this ) );
+		addEvent ( span,  'click', ( function ( param ) { return function ( e ) { param.onSpecialClick ( e ) } } ) ( this ) );
 		container.appendChild ( span );
 	}
 
@@ -3077,10 +3101,15 @@ function ParamNumber ( container, from, options )
 	this.value = from && from.value ? from.value : '';
 
 	var input = document.createElement ( 'input' );
-	if ( options && options.isRange )
-		input.type = 'number'
-	else
-		input.type = 'number'
+	try {
+		if ( options && options.isRange )
+			input.type = 'number'
+		else
+			input.type = 'number'
+	}
+	catch ( e ) {
+		input.type = 'text'
+	}
 	if ( options && options.min != null )
 		input.min = options.min;
 	if ( options && options.max != null )
@@ -3090,7 +3119,7 @@ function ParamNumber ( container, from, options )
 	if ( options && options.defaultValue != null )
 		input.placeholder = options.defaultValue;
 	input.value = this.value;
-	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 	container.appendChild ( input );
 
 	this.input = input;
@@ -3137,7 +3166,7 @@ function ParamXP ( container, from, options )
 	input.value = this.value;
 	input.min = 0;
 	input.max = 2147483647;
-	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
 	container.appendChild ( input );
 
 	this.input = input;
@@ -3145,7 +3174,7 @@ function ParamXP ( container, from, options )
 	var input = document.createElement ( 'input' );
 	input.type = 'checkbox'
 	input.checked = this.isLevels;
-	input.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onCheckChange ( e ) } } ) ( this ) );
+	addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onCheckChange ( e ) } } ) ( this ) );
 	container.appendChild ( input );
 	container.appendChild ( document.createTextNode ( ' Levels' ) );
 }
@@ -3264,22 +3293,22 @@ function PlayerSelector ( container, type, optional, from )
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Name' ) );
-	button.addEventListener ( 'click', ( function ( playerSelector ) { return function ( e ) { playerSelector.onAddNameClick ( e ) } } ) ( this ) );
+	addEvent ( button,  'click', ( function ( playerSelector ) { return function ( e ) { playerSelector.onAddNameClick ( e ) } } ) ( this ) );
 	cell.appendChild ( button );
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Team' ) );
-	button.addEventListener ( 'click', ( function ( playerSelector ) { return function ( e ) { playerSelector.onAddTeamClick ( e ) } } ) ( this ) );
+	addEvent ( button,  'click', ( function ( playerSelector ) { return function ( e ) { playerSelector.onAddTeamClick ( e ) } } ) ( this ) );
 	cell.appendChild ( button );
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Score Min' ) );
-	button.addEventListener ( 'click', ( function ( playerSelector ) { return function ( e ) { playerSelector.onAddScoreMinClick ( e ) } } ) ( this ) );
+	addEvent ( button,  'click', ( function ( playerSelector ) { return function ( e ) { playerSelector.onAddScoreMinClick ( e ) } } ) ( this ) );
 	cell.appendChild ( button );
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Score Max' ) );
-	button.addEventListener ( 'click', ( function ( playerSelector ) { return function ( e ) { playerSelector.onAddScoreMaxClick ( e ) } } ) ( this ) );
+	addEvent ( button,  'click', ( function ( playerSelector ) { return function ( e ) { playerSelector.onAddScoreMaxClick ( e ) } } ) ( this ) );
 	cell.appendChild ( button );
 
 	row.appendChild ( cell );
@@ -4373,7 +4402,7 @@ function TagCompound ( container, from, options )
 
 	var button = document.createElement ( 'button' );
 	button.appendChild ( document.createTextNode ( 'Add Tag' ) );
-	button.addEventListener ( 'click', ( function ( tagCompound ) { return function ( e ) { tagCompound.onAddClick ( e ) } } ) ( this ) );
+	addEvent ( button,  'click', ( function ( tagCompound ) { return function ( e ) { tagCompound.onAddClick ( e ) } } ) ( this ) );
 	container.appendChild ( button );
 }
 
@@ -4427,7 +4456,7 @@ TagCompound.prototype.createCustomTag = function ( container )
 
 	var cell = document.createElement ( 'th' );
 	var name = document.createElement ( 'input' );
-	name.addEventListener ( 'change', ( function ( tag ) { return function ( e ) { tag.onNameChange ( e ) } } ) ( this ) );
+	addEvent ( name,  'change', ( function ( tag ) { return function ( e ) { tag.onNameChange ( e ) } } ) ( this ) );
 	cell.appendChild ( name );
 	row.appendChild ( cell );
 
@@ -4435,7 +4464,7 @@ TagCompound.prototype.createCustomTag = function ( container )
 
 	var remove = document.createElement ( 'span' );
 	remove.appendChild ( document.createTextNode ( 'Remove' ) );
-	remove.addEventListener ( 'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, row ) );
+	addEvent ( remove,  'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, row ) );
 	cell.appendChild ( remove );
 
 	var value = new TagSelector ( cell );
@@ -4489,7 +4518,7 @@ function TagList ( container, from, options )
 	{
 		var button = document.createElement ( 'button' );
 		button.appendChild ( document.createTextNode ( 'Add List Item' ) );
-		button.addEventListener ( 'click', ( function ( tagList ) { return function ( e ) { tagList.onAddClick ( e ) } } ) ( this ) );
+		addEvent ( button,  'click', ( function ( tagList ) { return function ( e ) { tagList.onAddClick ( e ) } } ) ( this ) );
 		container.appendChild ( button );
 	}
 	
@@ -4528,7 +4557,7 @@ TagList.prototype.addItem = function ( from )
 	{
 		var cell = document.createElement ( 'span' );
 		cell.appendChild ( document.createTextNode ( 'Remove' ) );
-		cell.addEventListener ( 'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, div ) );
+		addEvent ( cell,  'click', ( function ( tag, parent ) { return function ( e ) { tag.onRemoveClick ( e, parent ) } } ) ( this, div ) );
 		div.appendChild ( cell );
 	}
 
@@ -4944,7 +4973,7 @@ function TagReplace ( container, from, options )
 	{
 		var button = document.createElement ( 'button' );
 		button.appendChild ( document.createTextNode ( 'Add ' + this.name ) );
-		button.addEventListener ( 'click', ( function ( tag ) { return function ( e ) { tag.onAddButtonClick ( e ) } } ) ( this ) );
+		addEvent ( button,  'click', ( function ( tag ) { return function ( e ) { tag.onAddButtonClick ( e ) } } ) ( this ) );
 		this.button = button;
 		container.appendChild ( button );
 	}
@@ -4990,7 +5019,7 @@ TagSelector.prototype.createHTML = function ( container )
 {
 	var selector = document.createElement ( 'select' );
 	selector.className = 'mc-tag-selector';
-	selector.addEventListener ( 'change', ( function ( tagSelector ) { return function ( e ) { tagSelector.onSelectorChange ( e ) } } ) ( this ) );
+	addEvent ( selector,  'change', ( function ( tagSelector ) { return function ( e ) { tagSelector.onSelectorChange ( e ) } } ) ( this ) );
 	container.appendChild ( selector );
 
 	var option = document.createElement ( 'option' );
@@ -5107,11 +5136,12 @@ function updateCommand ( )
 		
 		selector.update ( );
 		
-		text.value = "";
-		text.value = selector.toString ( );
+		text.firstChild.value = "";
+		text.firstChild.value = selector.toString ( );
 		//text.select ( );
 		
-		text.className = reader.getElementsByClassName ( 'error' ).length ? 'mc-commands-text error' : 'mc-commands-text';
+		if ( document.getElementsByClassName )
+			text.className = reader.getElementsByClassName ( 'error' ).length ? 'mc-command-text error' : 'mc-command-text';
 	}
 }
 
@@ -5120,14 +5150,16 @@ function createSelector ( container )
 	var commandReader = document.createElement ( 'div' );
 	commandReader.className = 'mc-command-reader';
 	container.appendChild ( commandReader );
-
-	var commandText = document.createElement ( 'textarea' );
-	commandText.className = 'mc-commands-text';
-	commandText.readOnly = true;
-	commandText.cols = 100;
-	commandText.rows = 10;
-	commandText.addEventListener ( 'click', ( function ( textarea ) { return function ( e ) { textarea.select ( ) } } ) ( commandText ) );
+	
+	var commandText = document.createElement ( 'div' );
+	commandText.className = 'mc-command-text';
 	container.appendChild ( commandText );
+
+	var commandTextarea = document.createElement ( 'textarea' );
+	commandTextarea.className = 'mc-command-textarea';
+	commandTextarea.readOnly = true;
+	addEvent ( commandTextarea,  'click', ( function ( textarea ) { return function ( e ) { textarea.select ( ) } } ) ( commandTextarea ) );
+	commandText.appendChild ( commandTextarea );
 
 	var commandSelector = new CommandSelector ( commandReader, commandText );
 	

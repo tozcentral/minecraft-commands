@@ -515,6 +515,8 @@ Command.prototype.createParam = function ( container, name, type, from, options 
 	this.paramsOrdered.push ( param );
 	
 	container.appendChild ( fragment );
+	
+	return param;
 }
 
 Command.prototype.onGroupRadioboxChange = function ( e )
@@ -901,19 +903,380 @@ CommandSay.prototype = new Command ( );
 function CommandScoreBoard ( container, from )
 {
 	this.init ( container, 'scoreboard', '' )
+	
+	this.objectives = [];
+	this.objectivesList = [];
+	this.objectivesAdd = [];
+	this.objectivesRemove = [];
+	this.objectivesSetDisplay = [];
+	
+	this.players = [];
+	this.playersSet = [];
+	this.playersAdd = [];
+	this.playersRemove = [];
+	this.playersReset = [];
+	this.playersList = [];
+	
+	this.teams = [];
+	this.teamsList = [];
+	this.teamsAdd = [];
+	this.teamsRemove = [];
+	this.teamsEmpty = [];
+	this.teamsJoin = [];
+	this.teamsLeave = [];
+	this.teamsOption = [];
+	this.teamsOptionFriendlyFire = []
+	this.teamsOptionSeeFriendlyInvisibles = []
+	this.teamsOptionColor = []
+	
+	var param;
 
 	from = from && from.paramsOrdered;
 
 	this.createParam ( container, 'objectives | players | teams', 'Select', from, { items: ['objectives','players','teams'] } );
-	this.createParam ( container, 'objectives', ParamScoreboardObjectives, from );
-	this.createParam ( container, 'players', ParamScoreboardPlayers, from );
-	this.createParam ( container, 'teams', ParamScoreboardTeams, from );
-	/*this.createParam ( container, 'list | add | remove | setdisplay', 'Select', from, { items: ['list','add','remove','setdisplay'] } );
-	this.createParam ( container, 'set | add | remove | reset | list', 'Select', from, { items: ['set','add','remove','reset','list'] } );
-	this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'Select', from, { items: ['list','add','remove','empty','join','leave','option'] } );*/
+	
+	/* objectives */
+	param = this.createParam ( container, 'list | add | remove | setdisplay', 'Select', from, { items: ['list','add','remove','setdisplay'] } );
+	this.objectives.push ( param );
+	
+	/* objectives list */
+	
+	/* objectives add */
+	param = this.createParam ( container, 'name', 'Text', from );
+	this.objectives.push ( param );
+	this.objectivesAdd.push ( param );
+	param = this.createParam ( container, 'criteriaType', 'Text', from );
+	this.objectives.push ( param );
+	this.objectivesAdd.push ( param );
+	param = this.createParam ( container, 'display name', 'Text', from, { optional: true } );
+	this.objectives.push ( param );
+	this.objectivesAdd.push ( param );
+	
+	/* objectives remove */
+	param = this.createParam ( container, 'name', 'Text', from );
+	this.objectives.push ( param );
+	this.objectivesRemove.push ( param );
+	
+	/* objectives setdisplay */
+	param = this.createParam ( container, 'list | sidebar | belowName', 'Select', from, { items: ['list','sidebar','belowName'] } );
+	this.objectives.push ( param );
+	this.objectivesSetDisplay.push ( param );
+	param = this.createParam ( container, 'objective', 'Text', from, { optional: true } );
+	this.objectives.push ( param );
+	this.objectivesSetDisplay.push ( param );
+	
+	param = this.createParam ( container, 'set | add | remove | reset | list', 'Select', from, { items: ['set','add','remove','reset','list'] } );
+	this.players.push ( param );
+	
+	/* players set/add/remove */
+	param = this.createParam ( container, 'player', 'PlayerSelector', from );
+	this.players.push ( param );
+	this.playersSet.push ( param );
+	this.playersAdd.push ( param );
+	this.playersRemove.push ( param );
+	this.playersReset.push ( param );
+	param = this.createParam ( container, 'objective', 'Text', from );
+	this.players.push ( param );
+	this.playersSet.push ( param );
+	this.playersAdd.push ( param );
+	this.playersRemove.push ( param );
+	param = this.createParam ( container, 'score', 'Number', from );
+	this.players.push ( param );
+	this.playersSet.push ( param );
+	this.playersAdd.push ( param );
+	this.playersRemove.push ( param );
+	
+	/* players list */
+	param = this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
+	this.players.push ( param );
+	this.playersList.push ( param );
+	
+	param = this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'Select', from, { items: ['list','add','remove','empty','join','leave','option'] } );
+	this.teams.push ( param );
+	
+	/* teams list */
+	param = this.createParam ( container, 'team', 'Text', from, { optional: true } );
+	this.teams.push ( param );
+	this.teamsList.push ( param );
+	
+	/* teams add/remove/empty/option */
+	param = this.createParam ( container, 'name', 'Text', from );
+	this.teams.push ( param );
+	this.teamsAdd.push ( param );
+	this.teamsRemove.push ( param );
+	this.teamsEmpty.push ( param );
+	this.teamsJoin.push ( param );
+	this.teamsOption.push ( param );
+	
+	/* teams add */
+	param = this.createParam ( container, 'display name', 'Text', from, { optional: true } );
+	this.teams.push ( param );
+	this.teamsAdd.push ( param );
+	
+	/* teams join/leave */
+	param = this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
+	this.teams.push ( param );
+	this.teamsJoin.push ( param );
+	this.teamsLeave.push ( param );
+	
+	param = this.createParam ( container, 'friendlyfire | colour | seeFriendlyInvisibles', 'Select', from, { items: ['friendlyfire','color','seeFriendlyInvisibles'] } );
+	this.teams.push ( param );
+	this.teamsOption.push ( param );
+	
+	param = this.createParam ( container, 'value', 'Boolean', from );
+	this.teams.push ( param );
+	this.teamsOption.push ( param );
+	this.teamsOptionFriendlyFire.push ( param );
+	this.teamsOptionSeeFriendlyInvisibles.push ( param );
+	
+	param = this.createParam ( container, 'value', 'Select', from, { items: colors } );
+	this.teams.push ( param );
+	this.teamsOption.push ( param );
+	this.teamsOptionColor.push ( param );
 }
 
 CommandScoreBoard.prototype = new Command ( );
+
+CommandScoreBoard.prototype.update = function ( )
+{
+	var type = this.params['objectives | players | teams'].value.toString ( )
+	
+	if ( type == 'objectives' )
+	{
+		var subtype = this.objectives[0].value.toString ( );
+		
+		if ( subtype == 'list' )
+		{
+			this.hideParamList ( this.objectivesAdd );
+			this.hideParamList ( this.objectivesRemove );
+			this.hideParamList ( this.objectivesSetDisplay );
+			
+			this.showParamList ( this.objectivesList );
+		}
+		else if ( subtype == 'add' )
+		{
+			this.hideParamList ( this.objectivesList );
+			this.hideParamList ( this.objectivesRemove );
+			this.hideParamList ( this.objectivesSetDisplay );
+			
+			this.showParamList ( this.objectivesAdd );
+		}
+		else if ( subtype == 'remove' )
+		{
+			this.hideParamList ( this.objectivesList );
+			this.hideParamList ( this.objectivesAdd );
+			this.hideParamList ( this.objectivesSetDisplay );
+			
+			this.showParamList ( this.objectivesRemove );
+		}
+		else if ( subtype == 'setdisplay' )
+		{
+			this.hideParamList ( this.objectivesList );
+			this.hideParamList ( this.objectivesAdd );
+			this.hideParamList ( this.objectivesRemove );
+			
+			this.showParamList ( this.objectivesSetDisplay );
+		}
+		
+		this.showParam ( this.objectives[0] );
+		this.hideParamList ( this.players );
+		this.hideParamList ( this.teams );
+	}
+	else if ( type == 'players' )
+	{
+		var subtype = this.players[0].value.toString ( );
+		
+		if ( subtype == 'set' )
+		{
+			this.hideParamList ( this.playersAdd );
+			this.hideParamList ( this.playersRemove );
+			this.hideParamList ( this.playersReset );
+			this.hideParamList ( this.playersList );
+			
+			this.showParamList ( this.playersSet );
+		}
+		else if ( subtype == 'add' )
+		{
+			this.hideParamList ( this.playersSet );
+			this.hideParamList ( this.playersRemove );
+			this.hideParamList ( this.playersReset );
+			this.hideParamList ( this.playersList );
+			
+			this.showParamList ( this.playersAdd );
+		}
+		else if ( subtype == 'remove' )
+		{
+			this.hideParamList ( this.playersSet );
+			this.hideParamList ( this.playersAdd );
+			this.hideParamList ( this.playersReset );
+			this.hideParamList ( this.playersList );
+			
+			this.showParamList ( this.playersRemove );
+		}
+		else if ( subtype == 'reset' )
+		{
+			this.hideParamList ( this.playersSet );
+			this.hideParamList ( this.playersAdd );
+			this.hideParamList ( this.playersRemove );
+			this.hideParamList ( this.playersList );
+			
+			this.showParamList ( this.playersReset );
+		}
+		else if ( subtype == 'list' )
+		{
+			this.hideParamList ( this.playersSet );
+			this.hideParamList ( this.playersAdd );
+			this.hideParamList ( this.playersRemove );
+			this.hideParamList ( this.playersReset );
+			
+			this.showParamList ( this.playersList );
+		}
+		
+		this.showParam ( this.players[0] );
+		this.hideParamList ( this.objectives );
+		this.hideParamList ( this.teams );
+	}
+	else if ( type == 'teams' )
+	{
+		var subtype = this.teams[0].value.toString ( );
+		
+		if ( subtype == 'list' )
+		{
+			this.hideParamList ( this.teamsAdd );
+			this.hideParamList ( this.teamsRemove );
+			this.hideParamList ( this.teamsEmpty );
+			this.hideParamList ( this.teamsJoin );
+			this.hideParamList ( this.teamsLeave );
+			this.hideParamList ( this.teamsOption );
+			
+			this.showParamList ( this.teamsList );
+		}
+		else if ( subtype == 'add' )
+		{
+			this.hideParamList ( this.teamsList );
+			this.hideParamList ( this.teamsRemove );
+			this.hideParamList ( this.teamsEmpty );
+			this.hideParamList ( this.teamsJoin );
+			this.hideParamList ( this.teamsLeave );
+			this.hideParamList ( this.teamsOption );
+			
+			this.showParamList ( this.teamsAdd );
+		}
+		else if ( subtype == 'remove' )
+		{
+			this.hideParamList ( this.teamsList );
+			this.hideParamList ( this.teamsAdd );
+			this.hideParamList ( this.teamsEmpty );
+			this.hideParamList ( this.teamsJoin );
+			this.hideParamList ( this.teamsLeave );
+			this.hideParamList ( this.teamsOption );
+			
+			this.showParamList ( this.teamsRemove );
+		}
+		else if ( subtype == 'empty' )
+		{
+			this.hideParamList ( this.teamsList );
+			this.hideParamList ( this.teamsAdd );
+			this.hideParamList ( this.teamsRemove );
+			this.hideParamList ( this.teamsJoin );
+			this.hideParamList ( this.teamsLeave );
+			this.hideParamList ( this.teamsOption );
+			
+			this.showParamList ( this.teamsEmpty );
+		}
+		else if ( subtype == 'join' )
+		{
+			this.hideParamList ( this.teamsList );
+			this.hideParamList ( this.teamsAdd );
+			this.hideParamList ( this.teamsRemove );
+			this.hideParamList ( this.teamsEmpty );
+			this.hideParamList ( this.teamsLeave );
+			this.hideParamList ( this.teamsOption );
+			
+			this.showParamList ( this.teamsJoin );
+		}
+		else if ( subtype == 'leave' )
+		{
+			this.hideParamList ( this.teamsList );
+			this.hideParamList ( this.teamsAdd );
+			this.hideParamList ( this.teamsRemove );
+			this.hideParamList ( this.teamsEmpty );
+			this.hideParamList ( this.teamsJoin );
+			this.hideParamList ( this.teamsOption );
+			
+			this.showParamList ( this.teamsLeave );
+		}
+		else if ( subtype == 'option' )
+		{
+			var subsubtype = this.teamsOption[1].value.toString ( )
+			
+			if ( subsubtype == 'friendlyfire' )
+			{
+				this.hideParamList ( this.teamsOptionColor );
+				this.hideParamList ( this.teamsOptionSeeFriendlyInvisibles );
+				
+				this.showParamList ( this.teamsOptionFriendlyFire );
+			}
+			else if ( subsubtype == 'color' )
+			{
+				this.hideParamList ( this.teamsOptionFriendlyFire );
+				this.hideParamList ( this.teamsOptionSeeFriendlyInvisibles );
+				
+				this.showParamList ( this.teamsOptionColor );
+			}
+			else if ( subsubtype == 'seeFriendlyInvisibles' )
+			{
+				this.hideParamList ( this.teamsOptionFriendlyFire );
+				this.hideParamList ( this.teamsOptionColor );
+				
+				this.showParamList ( this.teamsOptionSeeFriendlyInvisibles );
+			}
+			
+			this.hideParamList ( this.teamsList );
+			this.hideParamList ( this.teamsAdd );
+			this.hideParamList ( this.teamsRemove );
+			this.hideParamList ( this.teamsEmpty );
+			this.hideParamList ( this.teamsJoin );
+			this.hideParamList ( this.teamsLeave );
+			
+			this.showParam ( this.teamsOption[0] );
+			this.showParam ( this.teamsOption[1] );
+			//this.showParamList ( this.teamsOption );
+		}
+		
+		this.showParam ( this.teams[0] );
+		this.hideParamList ( this.objectives );
+		this.hideParamList ( this.players );
+	}
+	
+	this.updateLoop ( );
+}
+
+CommandScoreBoard.prototype.showParam = function ( param )
+{
+	param.container.style.display = '';
+}
+
+CommandScoreBoard.prototype.hideParam = function ( param )
+{
+	param.container.style.display = 'none';
+}
+
+CommandScoreBoard.prototype.showParamList = function ( list )
+{
+	for ( var i = 0; i < list.length; i++ )
+	{
+		list[i].container.style.display = '';
+	}
+}
+
+CommandScoreBoard.prototype.hideParamList = function ( list )
+{
+	for ( var i = 0; i < list.length; i++ )
+	{
+		list[i].container.style.display = 'none';
+	}
+}
 
 function CommandSetBlock ( container, from )
 {
@@ -2641,45 +3004,6 @@ ParamRawMessageExtras.prototype.toString = function ( previous )
 	
 	return items == '' ? '' : '[' + items + ']'
 }
-
-function ParamScoreboardObjectives ( container, from, options )
-{
-	this.init ( container, '', options );
-	
-	var options = document.createElement ( 'table' );
-	options.className = 'mc-scoreboard-options';
-	container.appendChild ( options );
-
-	this.createParam ( container, 'list | add | remove | setdisplay', 'Select', from, { items: ['list','add','remove','setdisplay'] } );
-}
-
-ParamScoreboardObjectives.prototype = new Param ( );
-
-function ParamScoreboardPlayers ( container, from, options )
-{
-	this.init ( container, '', options );
-	
-	var options = document.createElement ( 'table' );
-	options.className = 'mc-scoreboard-options';
-	container.appendChild ( options );
-
-	this.createParam ( container, 'set | add | remove | reset | list', 'Select', from, { items: ['set','add','remove','reset','list'] } );
-}
-
-ParamScoreboardPlayers.prototype = new Param ( );
-
-function ParamScoreboardTeams ( container, from, options )
-{
-	this.init ( container, '', options );
-	
-	var options = document.createElement ( 'table' );
-	options.className = 'mc-scoreboard-options';
-	container.appendChild ( options );
-
-	this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'Select', from, { items: ['list','add','remove','empty','join','leave','option'] } );
-}
-
-ParamScoreboardTeams.prototype = new Param ( );
 
 function ParamStatic ( container, from, options )
 {

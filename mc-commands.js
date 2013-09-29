@@ -817,7 +817,7 @@ function CommandGive ( container, from )
 	this.createParam ( container, 'player', 'PlayerSelector', from );
 	//this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true, stringIds: true } ); // New ParamItem, list of all items + custom
 	this.createParam ( container, 'item metadata', 'Select', from, { ignoreValue: true, stringIds: true, items: items, value: '{id} {data}', custom: true } );
-	this.createParam ( container, 'item', 'Number', from, { ignoreIfHidden: false, min: 1 } );
+	this.createParam ( container, 'item', 'Text', from, { ignoreIfHidden: false, min: 1 } );
 	this.createParam ( container, 'amount', 'Number', from, { optional: true, min: 0, max: 64, defaultValue: 1 } );
 	this.createParam ( container, 'metadata', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
 	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Item' } );
@@ -3135,20 +3135,23 @@ ParamNumber.prototype.update = function ( nextHasValue )
 
 	if ( required && this.value === '' && this.options.defaultValue == undefined )
 		this.setError ( true );
-
-	if ( this.input.className === '' && this.value !== '' && isNaN ( parseInt ( this.value ) ) )
+	
+	else if ( this.input.className === '' && this.value !== '' && isNaN ( parseInt ( this.value ) ) )
 		this.setError ( true );
 
-	if ( this.input.className === '' && this.value !== '' && this.options && this.options.max && parseInt ( this.value ) > this.options.max )
+	else if ( this.input.className === '' && this.value !== '' && this.options && this.options.max && parseInt ( this.value ) > this.options.max )
 		this.setError ( true );
 
-	if ( this.input.className === '' && this.value !== '' && this.options && this.options.min && parseInt ( this.value ) < this.options.min )
+	else if ( this.input.className === '' && this.value !== '' && this.options && this.options.min && parseInt ( this.value ) < this.options.min )
 		this.setError ( true );
 
-	if ( this.input.className === '' && this.value !== '' && ( !this.options || !this.options.isFloat ) && parseInt ( this.value ) != this.value )
+	else if ( this.input.className === '' && this.value !== '' && ( !this.options || !this.options.isFloat ) && parseInt ( this.value ) != this.value )
 		this.setError ( true );
 
-	if ( this.input.className === '' && this.value !== '' && ( this.options && this.options.isFloat ) && parseFloat ( this.value ) != this.value )
+	else if ( this.input.className === '' && this.value !== '' && ( this.options && this.options.isFloat ) && parseFloat ( this.value ) != this.value )
+		this.setError ( true );
+
+	else if ( this.input.className === '' && this.value !== '' && this.input.validity.valid )
 		this.setError ( true );
 }
 
@@ -3687,7 +3690,7 @@ function StructureItemColourable ( )
 {
 	this.structure = (new structures['Item'] ( )).structure;
 
-	this.structure.display.color = 'RGB'
+	this.structure['display'].options.structure['color'] = 'RGB'
 }
 
 function StructureItemPotion ( )
@@ -5012,6 +5015,27 @@ TagReplace.prototype.addItem = function ( from )
 	this.tag = new tags['Compound'] ( this.container, this.structure, this.optional, from );
 }
 
+function TagRGB ( container, from, options )
+{
+	this.r = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
+	this.g = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
+	this.b = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
+}
+
+TagRGB.prototype = new Tag ( );
+
+TagRGB.prototype.update = function ( )
+{
+	this.r.update ( );
+	this.g.update ( );
+	this.b.update ( );
+}
+
+TagRGB.prototype.toString = function ( )
+{
+	return (( (parseInt(this.r.toString ( true )) || 0) << 16 ) + ( (parseInt(this.g.toString ( true )) || 0) << 8 ) + (parseInt(this.b.toString ( true )) || 0) ) || '';
+}
+
 function TagSelect ( container, from, options )
 {
 	this.init ( container, '', options );
@@ -5265,7 +5289,7 @@ tags = {
 	'Item': TagItem,
 	'Potion': TagPotion,
 	'Replace': TagReplace,
-	'RGB': TagShort,
+	'RGB': TagRGB,
 	'Select': TagSelect
 }
 

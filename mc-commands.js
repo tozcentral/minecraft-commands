@@ -3836,7 +3836,7 @@ function StructureEntityMob ( )
 			type: 'Compound',
 			options: {
 				structure: {
-					'Id': 'Byte',
+					'Id': 'Potion',
 					'Amplifier': 'Byte',
 					'Duration': 'Int',
 					'Ambient': 'Boolean'
@@ -4730,7 +4730,8 @@ TagCommandSelector.prototype.toString = function ( )
 function TagEnchantment ( container, from, options )
 {
 	this.init ( container, '', options );
-	this.tag = new params['Enchantment'] ( container, from && from.tag, this.options );
+	//this.tag = new params['Enchantment'] ( container, from && from.tag, this.options );
+	this.tag = new params['Select'] ( container, from && from.tag, mergeObjects ( { items: enchantments }, this.options ) );
 }
 
 TagEnchantment.prototype = new Tag ( );
@@ -4958,6 +4959,15 @@ TagItem.prototype.toString = function ( )
 	return output.length ? '{' + output.join(',') + '}' : '';
 }
 
+function TagPotion ( container, from, options )
+{
+	this.init ( container, '', options );
+	//this.tag = new params['Potion'] ( container, from && from.tag, this.options );
+	this.tag = new params['Select'] ( container, from && from.tag, mergeObjects ( { items: potions }, this.options ) );
+}
+
+TagPotion.prototype = new Tag ( );
+
 function TagReplace ( container, from, options )
 {
 	this.init ( container, '', options );
@@ -5001,6 +5011,15 @@ TagReplace.prototype.addItem = function ( from )
 		
 	this.tag = new tags['Compound'] ( this.container, this.structure, this.optional, from );
 }
+
+function TagSelect ( container, from, options )
+{
+	this.init ( container, '', options );
+	//this.tag = new params['Potion'] ( container, from && from.tag, this.options );
+	this.tag = new params['Select'] ( container, from && from.tag, this.options );
+}
+
+TagSelect.prototype = new Tag ( );
 
 function TagSelector ( container )
 {
@@ -5244,8 +5263,10 @@ tags = {
 	'Enchantment': TagEnchantment,
 	'Entity': TagEntity,
 	'Item': TagItem,
+	'Potion': TagPotion,
 	'Replace': TagReplace,
-	'RGB': TagShort
+	'RGB': TagShort,
+	'Select': TagSelect
 }
 
 /**STRUCTURE**/
@@ -7016,6 +7037,7 @@ statistics = [
 ];
 /**ENCHANTMENTS**/
 enchantments = [
+{group:'Armour'},
 {id:0,name:"Protection",minLevel:1,maxLevel:4},
 {id:1,name:"Fire Protection",minLevel:1,maxLevel:4},
 {id:2,name:"Feather Falling",minLevel:1,maxLevel:4},
@@ -7024,20 +7046,26 @@ enchantments = [
 {id:5,name:"Respiration",minLevel:1,maxLevel:3},
 {id:6,name:"Aqua Affinity",minLevel:1,maxLevel:1},
 {id:7,name:"Thorns",minLevel:1,maxLevel:3},
+{group:'Sword'},
 {id:16,name:"Sharpness",minLevel:1,maxLevel:5},
 {id:17,name:"Smite",minLevel:1,maxLevel:5},
 {id:18,name:"Bane of Arthropods",minLevel:1,maxLevel:5},
 {id:19,name:"Knockback",minLevel:1,maxLevel:2},
 {id:20,name:"Fire Aspect",minLevel:1,maxLevel:2},
 {id:21,name:"Looting",minLevel:1,maxLevel:3},
+{group:'Tool'},
 {id:32,name:"Efficiency",minLevel:1,maxLevel:5},
 {id:33,name:"Silk Touch",minLevel:1,maxLevel:1},
 {id:34,name:"Unbreaking",minLevel:1,maxLevel:3},
 {id:35,name:"Fortune",minLevel:1,maxLevel:3},
+{group:'Bow'},
 {id:48,name:"Power",minLevel:1,maxLevel:5},
 {id:49,name:"Punch",minLevel:1,maxLevel:2},
 {id:50,name:"Flame",minLevel:1,maxLevel:1},
-{id:51,name:"Infinity",minLevel:1,maxLevel:1}
+{id:51,name:"Infinity",minLevel:1,maxLevel:1},
+{group:'Fishing Rod'},
+{id:60,name:"Luck of the Sea",minLevel:1,maxLevel:3},
+{id:61,name:"Lure",minLevel:1,maxLevel:3}
 ];
 /**POTIONS**/
 potions = [

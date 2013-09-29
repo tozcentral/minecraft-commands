@@ -950,21 +950,19 @@ function CommandScoreBoard ( container, from )
 	
 	/* objectives list */
 	
-	/* objectives add */
+	/* objectives add/remove */
 	param = this.createParam ( container, 'name', 'Text', from );
 	this.objectives.push ( param );
 	this.objectivesAdd.push ( param );
+	this.objectivesRemove.push ( param );
+	
+	/* objectives add */
 	param = this.createParam ( container, 'criteriaType', 'Text', from );
 	this.objectives.push ( param );
 	this.objectivesAdd.push ( param );
 	param = this.createParam ( container, 'display name', 'Text', from, { optional: true } );
 	this.objectives.push ( param );
 	this.objectivesAdd.push ( param );
-	
-	/* objectives remove */
-	param = this.createParam ( container, 'name', 'Text', from );
-	this.objectives.push ( param );
-	this.objectivesRemove.push ( param );
 	
 	/* objectives setdisplay */
 	param = this.createParam ( container, 'list | sidebar | belowName', 'Select', from, { items: ['list','sidebar','belowName'] } );

@@ -128,3 +128,40 @@ body,
 #todo:hover .todo-marker-icon::after {
 	margin-left: -8px;
 }
+
+.mc-select-list {
+	list-style: none;
+	margin: 0;
+	width: 300px;
+	height: 200px;
+	padding: 0;
+	overflow-y: scroll;
+	position: absolute;
+	background: #fff;
+	border: 1px solid #ccc;
+	display: none;
+}
+
+.mc-select-list-active {
+	display: block;
+}
+
+.mc-select-list ul {
+	list-style: none;
+	font-weight: normal;
+	margin: 0;
+	padding: 0;
+}
+
+.mc-select-list-group {
+	font-weight: bold;
+}
+
+.mc-select-list-item {
+	padding-left: 10px;
+}
+
+.mc-select-list-item:hover {
+	background-color: #eee;
+	cursor: pointer;
+}

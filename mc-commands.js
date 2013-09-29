@@ -3150,9 +3150,6 @@ ParamNumber.prototype.update = function ( nextHasValue )
 
 	else if ( this.input.className === '' && this.value !== '' && ( this.options && this.options.isFloat ) && parseFloat ( this.value ) != this.value )
 		this.setError ( true );
-
-	else if ( this.input.className === '' && this.value !== '' && this.input.validity.valid )
-		this.setError ( true );
 }
 
 function ParamXP ( container, from, options )

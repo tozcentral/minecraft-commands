@@ -548,7 +548,7 @@ function CommandAchievement ( container, from )
 
 	this.createParam ( container, 'give', 'Static', from, { defaultValue: 'give' }  );
 	//this.createParam ( container, 'achievement or statistic', 'Achievement', from );
-	this.createParam ( container, 'achievement or statistic', 'Select', from, { items: [{group:'Achievements'}].concat ( achievements, {group:'Statistics'}, statistics ) } );
+	this.createParam ( container, 'achievement or statistic', 'Select', from, { items: [{group:'Achievements'}].concat ( achievements, {group:'Statistics'}, statistics ), editable: true, custom: true } );
 	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
 }
 
@@ -1265,7 +1265,7 @@ Param.prototype.onValueChange = function ( e )
 	e = e || window.event;
 	var target = e.target || e.srcElement;
 
-	this.setValue ( target.value );
+	this.setValue ( target.nodeName == 'INPUT' || target.nodeName == 'SELECT' ? target.value : target.getAttribute ( 'data-value' ) );
 
 	updateCommand ( );
 }
@@ -1804,14 +1804,146 @@ ParamItemTag.prototype.toString = function ( )
 function ParamSelect ( container, from, options )
 {
 	this.init ( container, '', options );
-	
-	var option;
 
 	this.item = null;
 	this.value = from && from.value;
+	
+	if ( this.options.editable )
+		this.createEditable ( )
+	else
+		this.createSelectable ( )
+}
 
+ParamSelect.prototype = new Param ( );
+
+ParamSelect.prototype.createEditable = function ( )
+{
+	var options = this.options;
+	
+	var edit = document.createElement ( 'input' )
+	edit.addEventListener ( 'keyup', ( function ( param ) { return function ( e ) { param.onSearch ( e ) } } ) ( this ) );
+	edit.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	edit.addEventListener ( 'focus', ( function ( param ) { return function ( e ) { param.onEditFocus ( e ) } } ) ( this ) );
+	edit.addEventListener ( 'blur', ( function ( param ) { return function ( e ) { param.onEditBlur ( e ) } } ) ( this ) );
+	edit.value = this.value || this.options.defaultValue || ''
+	
+	this.container.appendChild ( edit )
+	
+	var list = document.createElement ( 'ul' )
+	list.className = 'mc-select-list';
+	
+	if ( this.options.optional && this.options.defaultValue == null )
+	{
+		option = document.createElement ( 'li' );
+		option.value = '';
+		option.appendChild ( document.createTextNode ( 'None' ) );
+		list.appendChild ( option );
+	}
+	
+	var valueTemplate = this.options.value || '{id}';
+	var item;
+	for ( var i = 0; i < this.options.items.length; i++ )
+	{
+		item = this.options.items[i];
+		
+		if ( typeof item == 'string' )
+			item = { name: item, stringId: item }
+			
+		if ( item.group != null )
+		{
+			option = document.createElement ( 'li' )
+			option.className = 'mc-select-list-group'
+			option.appendChild ( document.createTextNode ( item.group ) )
+			parent = document.createElement ( 'ul' )
+			option.appendChild ( parent )
+			list.appendChild ( option );
+		}
+		
+		if ( !item.stringId && !item.id )
+			continue;
+			
+		var value = valueTemplate.replace('{id}', this.options.stringIds ? item.stringId || item.id : item.id || item.stringId );
+		for ( var x in item )
+		{
+			value = value.replace ( '{' + x + '}', item[x] );
+		}
+		
+		option = document.createElement ( 'li' );
+		option.addEventListener ( 'click', ( function ( param ) { return function ( e ) { param.onValueChange ( e ); } } ) ( this ) );
+		option.className = 'mc-select-list-item'
+		option.setAttribute('data-value', value);
+		option.setAttribute('data-search', (value + (item.name || item.stringId || item.id || '' )).toLowerCase());
+		option.setAttribute('data-index', i);
+		option.selected = ( value == ( this.value || this.options.defaultValue ) )
+		if ( option.selected )
+			this.item = item;
+		option.appendChild ( document.createTextNode ( item.name || item.stringId || item.id ) );
+		parent.appendChild ( option );
+	}
+	
+	this.container.appendChild ( list )
+
+	this.setValue ( edit.value );
+	this.input = edit;
+	this.list = list;
+}
+
+ParamSelect.prototype.onSearch = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+	
+	var search = target.value.toLowerCase();
+	
+	if ( this.options.editable )
+		this.search ( this.list.children, search );
+}
+
+ParamSelect.prototype.search = function ( items, value )
+{
+	var visible = 0;
+	for ( var i = 0; i < items.length; i++ )
+	{
+		var item = items[i];
+		if ( item.className == 'mc-select-list-item' && item.getAttribute('data-search').indexOf ( value ) == -1 )
+		{
+			item.style.display = 'none';
+		}
+		else
+		{
+			visible++;
+			item.style.display = '';
+			if ( item.className == 'mc-select-list-group' )
+			{
+				if ( this.search ( item.children[0].children, value ) == 0 )
+				{
+					item.style.display = 'none';
+					visible--;
+				}
+			}
+		}
+	}
+	return visible;
+}
+
+ParamSelect.prototype.onEditFocus = function ( e )
+{
+	this.list.className = 'mc-select-list mc-select-list-active'
+}
+
+ParamSelect.prototype.onEditBlur = function ( e )
+{
+	setTimeout ( ( function ( param ) { return function ( ) { param.list.className = 'mc-select-list' } } ) ( this ), 250 );
+}
+
+ParamSelect.prototype.createSelectable = function ( )
+{
+	var options = this.options;
+	
 	var select = document.createElement ( 'select' )
 	select.addEventListener ( 'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+	
+	var option;
 	
 	if ( this.options.optional && this.options.defaultValue == null )
 	{
@@ -1825,7 +1957,7 @@ function ParamSelect ( container, from, options )
 	
 	var valueTemplate = this.options.value || '{id}';
 	var item;
-	for ( var i = 0; i < options.items.length; i++ )
+	for ( var i = 0; i < this.options.items.length; i++ )
 	{
 		item = options.items[i];
 		
@@ -1869,10 +2001,8 @@ function ParamSelect ( container, from, options )
 	this.setValue ( select.value );
 	this.input = select;
 
-	container.appendChild ( select );
+	this.container.appendChild ( select );
 }
-
-ParamSelect.prototype = new Param ( );
 
 ParamSelect.prototype.update = function ( nextHasValue )
 {
@@ -1882,11 +2012,48 @@ ParamSelect.prototype.update = function ( nextHasValue )
 
 	if ( required && this.value === '' )
 		this.setError ( true );
-		
-	var option = this.input.selectedOptions[0];
-		
-	if ( option )
-		this.item = option.hasAttribute ( 'data-index' ) ? this.options.items[option.getAttribute ( 'data-index' )] || null : null
+	else if ( this.options.editable )
+	{
+		if ( !this.options.custom )
+		{
+			var found = false
+			var valueTemplate = this.options.value || '{id}';
+			var item;
+			for ( var i = 0; i < this.options.items.length; i++ )
+			{
+				item = this.options.items[i];
+				
+				if ( typeof item == 'string' )
+					item = { name: item, stringId: item }
+				
+				if ( !item.stringId && !item.id )
+					continue;
+				
+				var value = valueTemplate.replace('{id}', this.options.stringIds ? item.stringId || item.id : item.id || item.stringId );
+				for ( var x in item )
+				{
+					value = value.replace ( '{' + x + '}', item[x] );
+				}
+				
+				if ( value == this.value )
+				{
+					found = true;
+					break;
+				}
+			}
+			
+			if ( !found )
+				this.setError ( true );
+		}
+	}
+	
+	if ( !this.options.editable )
+	{
+		var option = this.input.selectedOptions[0];
+			
+		if ( option )
+			this.item = option.hasAttribute ( 'data-index' ) ? this.options.items[option.getAttribute ( 'data-index' )] || null : null
+	}
 }
 
 function ParamPlayerSelector ( container, from, options )

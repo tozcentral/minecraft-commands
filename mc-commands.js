@@ -1878,6 +1878,159 @@ ParamBoolean.prototype.onCheckboxChange = function ( e )
 	updateCommand ( );
 }
 
+function ParamColor ( container, from, options )
+{
+	this.init ( container, '', options );
+	
+	this.value = from && from.value || ''
+
+	var input = document.createElement ( 'input' )
+	input.type = 'color'
+	
+	if ( input.type == 'color' )
+	{
+		input.value = this.value
+		input.placeholder = this.options.defaultValue || ''
+		addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+		
+		if ( this.options.optional )
+		{
+			var optional = document.createElement ( 'input' )
+			optional.type = 'checkbox'
+			this.output = optional.checked = false
+			addEvent ( optional,  'change', ( function ( param ) { return function ( e ) { param.onOptionalChange ( e ) } } ) ( this ) );
+			container.appendChild ( optional );
+			
+			this.optional = optional;
+		}
+		
+		container.appendChild ( input );
+		
+		this.value = input.value;
+	
+		this.input = input;
+	}
+	else
+	{
+		var r = document.createElement ( 'input' )
+		r.type = 'number'
+		r.min = 0;
+		r.max = 255;
+		addEvent ( r,  'change', ( function ( param ) { return function ( e ) { param.onColorChange ( e ) } } ) ( this ) );
+		
+		var g = document.createElement ( 'input' )
+		g.type = 'number'
+		g.min = 0;
+		g.max = 255;
+		addEvent ( g,  'change', ( function ( param ) { return function ( e ) { param.onColorChange ( e ) } } ) ( this ) )
+		
+		var b = document.createElement ( 'input' )
+		b.type = 'number'
+		b.min = 0;
+		b.max = 255;
+		addEvent ( b,  'change', ( function ( param ) { return function ( e ) { param.onColorChange ( e ) } } ) ( this ) );
+		
+		container.appendChild ( r );
+		container.appendChild ( g );
+		container.appendChild ( b );
+	
+		this.r = r;
+		this.g = g;
+		this.b = b;
+	}
+}
+
+ParamColor.prototype = new Param ( );
+
+ParamColor.prototype.onValueChange = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+
+	this.setValue ( target.nodeName == 'INPUT' || target.nodeName == 'SELECT' ? target.value : target.getAttribute ( 'data-value' ) );
+	
+	if ( this.optional )
+		this.output = this.optional.checked = true;
+
+	updateCommand ( );
+}
+
+Param.prototype.setError = function ( error )
+{
+	if ( error )
+	{
+		if ( this.input )
+			this.input.className = 'error'
+		if ( this.r )
+			this.r.className = 'error'
+		if ( this.g )
+			this.g.className = 'error'
+		if ( this.b )
+			this.b.className = 'error'
+	}
+	else
+	{
+		if ( this.input )
+			this.input.className = ''
+			
+		if ( this.r )
+			this.r.className = ''
+		if ( this.g )
+			this.g.className = ''
+		if ( this.b )
+			this.b.className = ''
+	}
+}
+
+ParamColor.prototype.onOptionalChange = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+	
+	this.output = target.checked
+	
+	updateCommand ( );
+}
+
+ParamColor.prototype.onColorChange = function ( e )
+{
+	var r = parseInt(this.r.value) || 0
+	var g = parseInt(this.g.value) || 0
+	var b = parseInt(this.b.value) || 0
+	
+	this.setValue ( '#' + ("0" + r.toString(16)).slice(-2) + ("0" + g.toString(16)).slice(-2) + ("0" + b.toString(16)).slice(-2) )
+	
+	updateCommand ( );
+}
+
+ParamColor.prototype.toString = function ( needValue )
+{
+	var value = this.output === false ? '' : this.value;
+	var defaultValue = this.options && this.options.defaultValue !== null ? this.options.defaultValue : '';
+	
+	if ( needValue && value === '' && defaultValue !== '' )
+		value = defaultValue
+	else if ( !needValue && value == defaultValue )
+		value = '';
+	
+	if ( this.options.number && value != '' )
+	{
+		var r = parseInt(value.substring(1,3),16) || 0
+		var g = parseInt(value.substring(3,5),16) || 0
+		var b = parseInt(value.substring(5,7),16) || 0
+		
+		value = ( ( r << 16 ) + ( g << 8 ) + b ) || 0;
+		
+		if ( !needValue && value.toString ( ) == defaultValue )
+			value = '';
+	}
+	
+	if ( this.options && this.options.quote && value !== '' )
+		value = quote ( value )
+	
+	return value;
+}
+
 function ParamCommandSelector ( container, from, options )
 {
 	this.init ( container, '', options );
@@ -2784,7 +2937,7 @@ ParamRawMessage.prototype.toString = function ( previous )
 			{
 				if ( param.value.checked == previous[name].value.checked )
 					value = ''
-				else if ( value == '' )
+				else if ( value === '' )
 					value = 'false'
 			}
 			else if ( name == 'color' )
@@ -2808,7 +2961,7 @@ ParamRawMessage.prototype.toString = function ( previous )
 	
 	items = items.join(',')
 	
-	return items == '' ? '' : '{' + items + '}'
+	return items === '' ? '' : '{' + items + '}'
 }
 
 function ParamRawMessageEvent ( container, from, options )
@@ -3033,7 +3186,7 @@ ParamRawMessageExtras.prototype.toString = function ( previous )
 	
 	items = items.join(',')
 	
-	return items == '' ? '' : '[' + items + ']'
+	return items === '' ? '' : '[' + items + ']'
 }
 
 function ParamStatic ( container, from, options )
@@ -3395,7 +3548,7 @@ PlayerSelector.prototype.toString = function ( )
 		
 		if ( typeof name != 'string' )
 		{
-			if ( name.input.value == '' )
+			if ( name.input.value === '' )
 				continue;
 				
 			name = ( name.prefix || '' ) + name.input.value + ( name.suffix || '' )
@@ -4367,7 +4520,7 @@ Tag.prototype.toString = function ( required )
 		return output;
 	}
 	
-	return ( this.tag && this.tag.toString ( required ) ) || '';
+	return this.tag ? this.tag.toString ( required ) : '';
 }
 
 function TagCompound ( container, from, options )
@@ -5014,24 +5167,13 @@ TagReplace.prototype.addItem = function ( from )
 
 function TagRGB ( container, from, options )
 {
-	this.r = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
+	this.tag = new params['Color'] ( container, from && from.tag, {optional:true, number: true} );
+	/*this.r = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
 	this.g = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
-	this.b = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
+	this.b = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );*/
 }
 
 TagRGB.prototype = new Tag ( );
-
-TagRGB.prototype.update = function ( )
-{
-	this.r.update ( );
-	this.g.update ( );
-	this.b.update ( );
-}
-
-TagRGB.prototype.toString = function ( )
-{
-	return (( (parseInt(this.r.toString ( true )) || 0) << 16 ) + ( (parseInt(this.g.toString ( true )) || 0) << 8 ) + (parseInt(this.b.toString ( true )) || 0) ) || '';
-}
 
 function TagSelect ( container, from, options )
 {
@@ -5247,6 +5389,7 @@ params = {
 	//'Achievement': ParamAchievement,
 	'Boolean': ParamBoolean,
 	//'Block': ParamBlock,
+	'Color': ParamColor,
 	'CommandSelector': ParamCommandSelector,
 	'DataTag': ParamDataTag,
 	//'Enchantment': ParamEnchantment,

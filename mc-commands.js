@@ -3820,11 +3820,16 @@ function StructureEntityMob ( )
 		}
 	}
 	
-	this.structure['DropChance'] = {
+	this.structure['DropChances'] = {
 		type: 'List',
 		options: {
 			type: 'Float',
-			count: 5
+			count: 5,
+			options: {
+				min: 0,
+				max: 1,
+				defaultValue: 0.085
+			}
 		}
 	}
 	

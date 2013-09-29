@@ -576,7 +576,7 @@ function CommandAchievement ( container, from )
 
 	this.createParam ( container, 'give', 'Static', from, { defaultValue: 'give' }  );
 	//this.createParam ( container, 'achievement or statistic', 'Achievement', from );
-	this.createParam ( container, 'achievement or statistic', 'Select', from, { items: [{group:'Achievements'}].concat ( achievements, {group:'Statistics'}, statistics ), editable: true, custom: true } );
+	this.createParam ( container, 'achievement or statistic', 'Select', from, { items: [{group:'Achievements'}].concat ( achievements, {group:'Statistics'}, statistics ), custom: true } );
 	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
 }
 
@@ -817,7 +817,7 @@ function CommandGive ( container, from )
 	this.createParam ( container, 'player', 'PlayerSelector', from );
 	//this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true, stringIds: true } ); // New ParamItem, list of all items + custom
 	this.createParam ( container, 'item metadata', 'Select', from, { ignoreValue: true, stringIds: true, items: items, value: '{id} {data}', custom: true } );
-	this.createParam ( container, 'item', 'Number', from, { ignoreIfHidden: false, min: 1 } );
+	this.createParam ( container, 'item', 'Text', from, { ignoreIfHidden: false, min: 1 } );
 	this.createParam ( container, 'amount', 'Number', from, { optional: true, min: 0, max: 64, defaultValue: 1 } );
 	this.createParam ( container, 'metadata', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
 	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Item' } );
@@ -1878,6 +1878,159 @@ ParamBoolean.prototype.onCheckboxChange = function ( e )
 	updateCommand ( );
 }
 
+function ParamColor ( container, from, options )
+{
+	this.init ( container, '', options );
+	
+	this.value = from && from.value || ''
+
+	var input = document.createElement ( 'input' )
+	input.type = 'color'
+	
+	if ( input.type == 'color' )
+	{
+		input.value = this.value
+		input.placeholder = this.options.defaultValue || ''
+		addEvent ( input,  'change', ( function ( param ) { return function ( e ) { param.onValueChange ( e ) } } ) ( this ) );
+		
+		if ( this.options.optional )
+		{
+			var optional = document.createElement ( 'input' )
+			optional.type = 'checkbox'
+			this.output = optional.checked = false
+			addEvent ( optional,  'change', ( function ( param ) { return function ( e ) { param.onOptionalChange ( e ) } } ) ( this ) );
+			container.appendChild ( optional );
+			
+			this.optional = optional;
+		}
+		
+		container.appendChild ( input );
+		
+		this.value = input.value;
+	
+		this.input = input;
+	}
+	else
+	{
+		var r = document.createElement ( 'input' )
+		r.type = 'number'
+		r.min = 0;
+		r.max = 255;
+		addEvent ( r,  'change', ( function ( param ) { return function ( e ) { param.onColorChange ( e ) } } ) ( this ) );
+		
+		var g = document.createElement ( 'input' )
+		g.type = 'number'
+		g.min = 0;
+		g.max = 255;
+		addEvent ( g,  'change', ( function ( param ) { return function ( e ) { param.onColorChange ( e ) } } ) ( this ) )
+		
+		var b = document.createElement ( 'input' )
+		b.type = 'number'
+		b.min = 0;
+		b.max = 255;
+		addEvent ( b,  'change', ( function ( param ) { return function ( e ) { param.onColorChange ( e ) } } ) ( this ) );
+		
+		container.appendChild ( r );
+		container.appendChild ( g );
+		container.appendChild ( b );
+	
+		this.r = r;
+		this.g = g;
+		this.b = b;
+	}
+}
+
+ParamColor.prototype = new Param ( );
+
+ParamColor.prototype.onValueChange = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+
+	this.setValue ( target.nodeName == 'INPUT' || target.nodeName == 'SELECT' ? target.value : target.getAttribute ( 'data-value' ) );
+	
+	if ( this.optional )
+		this.output = this.optional.checked = true;
+
+	updateCommand ( );
+}
+
+Param.prototype.setError = function ( error )
+{
+	if ( error )
+	{
+		if ( this.input )
+			this.input.className = 'error'
+		if ( this.r )
+			this.r.className = 'error'
+		if ( this.g )
+			this.g.className = 'error'
+		if ( this.b )
+			this.b.className = 'error'
+	}
+	else
+	{
+		if ( this.input )
+			this.input.className = ''
+			
+		if ( this.r )
+			this.r.className = ''
+		if ( this.g )
+			this.g.className = ''
+		if ( this.b )
+			this.b.className = ''
+	}
+}
+
+ParamColor.prototype.onOptionalChange = function ( e )
+{
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+	
+	this.output = target.checked
+	
+	updateCommand ( );
+}
+
+ParamColor.prototype.onColorChange = function ( e )
+{
+	var r = parseInt(this.r.value) || 0
+	var g = parseInt(this.g.value) || 0
+	var b = parseInt(this.b.value) || 0
+	
+	this.setValue ( '#' + ("0" + r.toString(16)).slice(-2) + ("0" + g.toString(16)).slice(-2) + ("0" + b.toString(16)).slice(-2) )
+	
+	updateCommand ( );
+}
+
+ParamColor.prototype.toString = function ( needValue )
+{
+	var value = this.output === false ? '' : this.value;
+	var defaultValue = this.options && this.options.defaultValue !== null ? this.options.defaultValue : '';
+	
+	if ( needValue && value === '' && defaultValue !== '' )
+		value = defaultValue
+	else if ( !needValue && value == defaultValue )
+		value = '';
+	
+	if ( this.options.number && value != '' )
+	{
+		var r = parseInt(value.substring(1,3),16) || 0
+		var g = parseInt(value.substring(3,5),16) || 0
+		var b = parseInt(value.substring(5,7),16) || 0
+		
+		value = ( ( r << 16 ) + ( g << 8 ) + b ) || 0;
+		
+		if ( !needValue && value.toString ( ) == defaultValue )
+			value = '';
+	}
+	
+	if ( this.options && this.options.quote && value !== '' )
+		value = quote ( value )
+	
+	return value;
+}
+
 function ParamCommandSelector ( container, from, options )
 {
 	this.init ( container, '', options );
@@ -2784,7 +2937,7 @@ ParamRawMessage.prototype.toString = function ( previous )
 			{
 				if ( param.value.checked == previous[name].value.checked )
 					value = ''
-				else if ( value == '' )
+				else if ( value === '' )
 					value = 'false'
 			}
 			else if ( name == 'color' )
@@ -2808,7 +2961,7 @@ ParamRawMessage.prototype.toString = function ( previous )
 	
 	items = items.join(',')
 	
-	return items == '' ? '' : '{' + items + '}'
+	return items === '' ? '' : '{' + items + '}'
 }
 
 function ParamRawMessageEvent ( container, from, options )
@@ -3033,7 +3186,7 @@ ParamRawMessageExtras.prototype.toString = function ( previous )
 	
 	items = items.join(',')
 	
-	return items == '' ? '' : '[' + items + ']'
+	return items === '' ? '' : '[' + items + ']'
 }
 
 function ParamStatic ( container, from, options )
@@ -3135,20 +3288,20 @@ ParamNumber.prototype.update = function ( nextHasValue )
 
 	if ( required && this.value === '' && this.options.defaultValue == undefined )
 		this.setError ( true );
-
-	if ( this.input.className === '' && this.value !== '' && isNaN ( parseInt ( this.value ) ) )
+	
+	else if ( this.input.className === '' && this.value !== '' && isNaN ( parseInt ( this.value ) ) )
 		this.setError ( true );
 
-	if ( this.input.className === '' && this.value !== '' && this.options && this.options.max && parseInt ( this.value ) > this.options.max )
+	else if ( this.input.className === '' && this.value !== '' && this.options && this.options.max && parseInt ( this.value ) > this.options.max )
 		this.setError ( true );
 
-	if ( this.input.className === '' && this.value !== '' && this.options && this.options.min && parseInt ( this.value ) < this.options.min )
+	else if ( this.input.className === '' && this.value !== '' && this.options && this.options.min && parseInt ( this.value ) < this.options.min )
 		this.setError ( true );
 
-	if ( this.input.className === '' && this.value !== '' && ( !this.options || !this.options.isFloat ) && parseInt ( this.value ) != this.value )
+	else if ( this.input.className === '' && this.value !== '' && ( !this.options || !this.options.isFloat ) && parseInt ( this.value ) != this.value )
 		this.setError ( true );
 
-	if ( this.input.className === '' && this.value !== '' && ( this.options && this.options.isFloat ) && parseFloat ( this.value ) != this.value )
+	else if ( this.input.className === '' && this.value !== '' && ( this.options && this.options.isFloat ) && parseFloat ( this.value ) != this.value )
 		this.setError ( true );
 }
 
@@ -3395,7 +3548,7 @@ PlayerSelector.prototype.toString = function ( )
 		
 		if ( typeof name != 'string' )
 		{
-			if ( name.input.value == '' )
+			if ( name.input.value === '' )
 				continue;
 				
 			name = ( name.prefix || '' ) + name.input.value + ( name.suffix || '' )
@@ -3687,7 +3840,7 @@ function StructureItemColourable ( )
 {
 	this.structure = (new structures['Item'] ( )).structure;
 
-	this.structure.display.color = 'RGB'
+	this.structure['display'].options.structure['color'] = 'RGB'
 }
 
 function StructureItemPotion ( )
@@ -4367,7 +4520,7 @@ Tag.prototype.toString = function ( required )
 		return output;
 	}
 	
-	return ( this.tag && this.tag.toString ( required ) ) || '';
+	return this.tag ? this.tag.toString ( required ) : '';
 }
 
 function TagCompound ( container, from, options )
@@ -4504,6 +4657,7 @@ function TagList ( container, from, options )
 	options = mergeObjects ( options, defaultOptions );
 	
 	this.init ( container, '', options )
+	
 	/*this.type = structure.type || structure;
 	this.children = structure.children || null;
 	this.count = structure.count || '*';
@@ -4623,12 +4777,16 @@ TagList.prototype.toString = function ( )
 		}
 		
 		var output = [];
-
-		for ( var i = 0; i < this.tags.length; i++ )
+		
+		for ( var i = this.tags.length - 1; i >= 0; i-- )
 		{
 			var value = this.tags[i].value.toString ( required );
 			if ( value !== '' )
-				output.push ( value )
+			{
+				if ( this.options.count != '*' )
+					required = true;
+				output.unshift ( value )
+			}
 		}
 
 		if ( output.length )
@@ -4926,7 +5084,7 @@ TagItem.prototype.update = function ( )
 	this.updateLoop ( );
 }
 
-TagItem.prototype.toString = function ( ) 
+TagItem.prototype.toString = function ( required ) 
 {
 	var output = [];
 	
@@ -4956,7 +5114,7 @@ TagItem.prototype.toString = function ( )
 			output.push ( 'tag:' + tag );
 	}
 	
-	return output.length ? '{' + output.join(',') + '}' : '';
+	return output.length ? '{' + output.join(',') + '}' : ( required ? '{}' : '' );
 }
 
 function TagPotion ( container, from, options )
@@ -5011,6 +5169,16 @@ TagReplace.prototype.addItem = function ( from )
 		
 	this.tag = new tags['Compound'] ( this.container, this.structure, this.optional, from );
 }
+
+function TagRGB ( container, from, options )
+{
+	this.tag = new params['Color'] ( container, from && from.tag, {optional:true, number: true} );
+	/*this.r = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
+	this.g = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );
+	this.b = new params['Number'] ( container, from && from.tag, {optional:true,min:0,max:255,defaultValue:0} );*/
+}
+
+TagRGB.prototype = new Tag ( );
 
 function TagSelect ( container, from, options )
 {
@@ -5226,6 +5394,7 @@ params = {
 	//'Achievement': ParamAchievement,
 	'Boolean': ParamBoolean,
 	//'Block': ParamBlock,
+	'Color': ParamColor,
 	'CommandSelector': ParamCommandSelector,
 	'DataTag': ParamDataTag,
 	//'Enchantment': ParamEnchantment,
@@ -5265,7 +5434,7 @@ tags = {
 	'Item': TagItem,
 	'Potion': TagPotion,
 	'Replace': TagReplace,
-	'RGB': TagShort,
+	'RGB': TagRGB,
 	'Select': TagSelect
 }
 

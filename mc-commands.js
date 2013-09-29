@@ -561,8 +561,8 @@ function CommandClear ( container, from )
 	from = from && from.paramsOrdered;
 
 	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
-	//this.createParam ( container, 'item metadata', 'Item', from, { optional: true, ignoreValue: true, stringId: true } ); // New ParamItem, list of all items + custom
-	this.createParam ( container, 'item metadata', 'Select', from, { optional: true, ignoreValue: true, stringId: true, items: items, value: '{id} {data}', custom: true } );
+	//this.createParam ( container, 'item metadata', 'Item', from, { optional: true, ignoreValue: true, stringIds: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item metadata', 'Select', from, { optional: true, ignoreValue: true, stringIds: true, items: items, value: '{id} {data}', custom: true } );
 	this.createParam ( container, 'item', 'Text', from, { optional: true, ignoreIfHidden: false } );
 	this.createParam ( container, 'metadata', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0 } );
 }
@@ -787,8 +787,8 @@ function CommandGive ( container, from )
 	from = from && from.paramsOrdered;
 
 	this.createParam ( container, 'player', 'PlayerSelector', from );
-	//this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true, stringId: true } ); // New ParamItem, list of all items + custom
-	this.createParam ( container, 'item metadata', 'Select', from, { ignoreValue: true, stringId: true, items: items, value: '{id} {data}', custom: true } );
+	//this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true, stringIds: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item metadata', 'Select', from, { ignoreValue: true, stringIds: true, items: items, value: '{id} {data}', custom: true } );
 	this.createParam ( container, 'item', 'Number', from, { ignoreIfHidden: false, min: 1 } );
 	this.createParam ( container, 'amount', 'Number', from, { optional: true, min: 0, max: 64, defaultValue: 1 } );
 	this.createParam ( container, 'metadata', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
@@ -924,8 +924,8 @@ function CommandSetBlock ( container, from )
 	this.createParam ( container, 'x', 'Pos', from );
 	this.createParam ( container, 'y', 'Pos', from, { height: true } );
 	this.createParam ( container, 'z', 'Pos', from );
-	//this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true, stringId: true } );
-	this.createParam ( container, 'tilename datavalue', 'Select', from, { ignoreValue: true, stringId: true, items: blocks, value: '{id} {data}', custom: true } );
+	//this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true, stringIds: true } );
+	this.createParam ( container, 'tilename datavalue', 'Select', from, { ignoreValue: true, stringIds: true, items: blocks, value: '{id} {data}', custom: true } );
 	this.createParam ( container, 'tilename', 'Text', from, { ignoreIfHidden: false } );
 	this.createParam ( container, 'datavalue', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
 	this.createParam ( container, 'oldblockHandling', 'Select', from, { optional: true, items: ['replace','keep','destory'], defaultValue: 'replace' } );
@@ -1027,7 +1027,7 @@ function CommandSummon ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'Entity', 'Select', from, { ignoreValue: true, stringId: true, items: entities, custom: true } );
+	this.createParam ( container, 'Entity', 'Select', from, { ignoreValue: true, stringIds: true, items: entities, custom: true } );
 	//this.createParam ( container, 'Entity', 'Entity', from, { ignoreValue: true } );
 	this.createParam ( container, 'EntityName', 'Text', from, { ignoreIfHidden: false } );
 	this.createParam ( container, 'x', 'Pos', from );
@@ -1118,7 +1118,7 @@ function CommandTestForBlock ( container, from )
 	this.createParam ( container, 'y', 'Pos', from, { height: true } );
 	this.createParam ( container, 'z', 'Pos', from );
 	//this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true } );
-	this.createParam ( container, 'tilename datavalue', 'Select', from, { ignoreValue: true, stringId: true, items: blocks, value: '{id} {data}', custom: true } );
+	this.createParam ( container, 'tilename datavalue', 'Select', from, { ignoreValue: true, stringIds: true, items: blocks, value: '{id} {data}', custom: true } );
 	this.createParam ( container, 'tilename', 'Text', from, { ignoreIfHidden: false } );
 	this.createParam ( container, 'datavalue', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
 	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Block' } );
@@ -1759,7 +1759,8 @@ function ParamItemTag ( container, from, options )
 {
 	this.init ( container, '', options );
 	
-	this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item metadata', 'Select', from, { ignoreValue: true, items: items, value: '{id} {data}', custom: true } );
+	//this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true } ); // New ParamItem, list of all items + custom
 	this.createParam ( container, 'item', 'Number', from, { ignoreIfHidden: false, min:1 } );
 	this.createParam ( container, 'metadata', 'Number', from, { ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
 	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Item' } );
@@ -1841,7 +1842,7 @@ function ParamSelect ( container, from, options )
 		if ( !item.stringId && !item.id )
 			continue;
 		
-		var value = valueTemplate.replace('{id}', item.stringId || item.id);
+		var value = valueTemplate.replace('{id}', this.options.stringIds ? item.stringId || item.id : item.id || item.stringId );
 		for ( var x in item )
 		{
 			value = value.replace ( '{' + x + '}', item[x] );
@@ -4206,7 +4207,8 @@ function TagEntity ( container, from, options )
 {
 	this.init ( container, '', options );
 	
-	this.selector = new params['Entity'] ( container, from && from.selector, { optional: this.options.optional } );
+	//this.selector = new params['Entity'] ( container, from && from.selector, { optional: this.options.optional } );
+	this.selector = new params['Select'] ( container, from && from.selector, { optional: this.options.optional, ignoreValue: true, stringIds: true, items: entities, custom: true } );
 	this.id = new params['Text'] ( container, from && from.id, { optional: this.options.optional } );
 	if ( this.options.mobSpawnerPotentials )
 		this.weight = new params['Number'] ( container, from && from.id, { optional: this.options.optional, min: 1, defaultValue: 1 } );
@@ -4303,7 +4305,8 @@ function TagItem ( container, from, options )
 	table.className = 'mc-tag-options';
 	container.appendChild ( table );
 	
-	this.createParam ( table, 'item metadata', 'Item', from, { optional: this.options.optional, defaultValue: this.options.defaultValue } );
+	this.createParam ( table, 'item metadata', 'Select', from, { optional: this.options.optional, ignoreValue: true, items: items, value: '{id} {data}', custom: true,  defaultValue: this.options.defaultValue } );
+	//this.createParam ( table, 'item metadata', 'Item', from, { optional: this.options.optional, defaultValue: this.options.defaultValue } );
 	this.createParam ( table, 'item', 'Text', from, { optional: this.options.optional, defaultValue: 0 } );
 	this.createParam ( table, 'metadata', 'Text', from, { optional: this.options.optional, defaultValue: 0 } );
 	if ( this.options.count )
@@ -4666,23 +4669,23 @@ commands = {
 
 /**PARAMS**/
 params = {
-	'Achievement': ParamAchievement,
+	//'Achievement': ParamAchievement,
 	'Boolean': ParamBoolean,
-	'Block': ParamBlock,
+	//'Block': ParamBlock,
 	'CommandSelector': ParamCommandSelector,
 	'DataTag': ParamDataTag,
-	'Enchantment': ParamEnchantment,
-	'Entity': ParamEntity,
-	'Item': ParamItem,
+	//'Enchantment': ParamEnchantment,
+	//'Entity': ParamEntity,
+	//'Item': ParamItem,
 	'Select': ParamSelect,
 	'Number': ParamNumber,
 	'PlayerSelector': ParamPlayerSelector,
 	'Pos': ParamPos,
-	'Potion': ParamPotion,
+	//'Potion': ParamPotion,
 	'RawMessage': ParamRawMessage,
 	'RawMessageEvent': ParamRawMessageEvent,
 	'RawMessageExtras': ParamRawMessageExtras,
-	'Sound': ParamSound,
+	//'Sound': ParamSound,
 	'Static': ParamStatic,
 	'Text': ParamText,
 	'XP': ParamXP

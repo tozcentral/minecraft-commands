@@ -547,7 +547,8 @@ function CommandAchievement ( container, from )
 	from = from && from.paramsOrdered;
 
 	this.createParam ( container, 'give', 'Static', from, { defaultValue: 'give' }  );
-	this.createParam ( container, 'achievement or statistic', 'Achievement', from );
+	//this.createParam ( container, 'achievement or statistic', 'Achievement', from );
+	this.createParam ( container, 'achievement or statistic', 'Select', from, { items: [{group:'Achievements'}].concat ( achievements, {group:'Statistics'}, statistics ) } );
 	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
 }
 
@@ -560,8 +561,9 @@ function CommandClear ( container, from )
 	from = from && from.paramsOrdered;
 
 	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
-	this.createParam ( container, 'item metadata', 'Item', from, { optional: true, ignoreValue: true } ); // New ParamItem, list of all items + custom
-	this.createParam ( container, 'item', 'Number', from, { optional: true, ignoreIfHidden: false, min: 1 } );
+	//this.createParam ( container, 'item metadata', 'Item', from, { optional: true, ignoreValue: true, stringId: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item metadata', 'Select', from, { optional: true, ignoreValue: true, stringId: true, items: items, value: '{id} {data}', custom: true } );
+	this.createParam ( container, 'item', 'Text', from, { optional: true, ignoreIfHidden: false } );
 	this.createParam ( container, 'metadata', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0 } );
 }
 
@@ -597,7 +599,7 @@ function CommandDebug ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'start | stop', 'List', from, { items: ['start', 'stop'] } );
+	this.createParam ( container, 'start | stop', 'Select', from, { items: ['start', 'stop'] } );
 }
 
 CommandDebug.prototype = new Command ( );
@@ -608,7 +610,7 @@ function CommandDefaultGamemode ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'survival | creative | adventure', 'List', from, { items: ['survival', 'creative', 'adventure'] } );
+	this.createParam ( container, 'survival | creative | adventure', 'Select', from, { items: ['survival', 'creative', 'adventure'] } );
 }
 
 CommandDefaultGamemode.prototype = new Command ( );
@@ -619,7 +621,7 @@ function CommandDifficulty ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'peaceful | easy | normal | hard', 'List', from, { items: ['peaceful', 'easy', 'normal', 'hard'] } );
+	this.createParam ( container, 'peaceful | easy | normal | hard', 'Select', from, { items: ['peaceful', 'easy', 'normal', 'hard'] } );
 }
 
 CommandDifficulty.prototype = new Command ( );
@@ -629,20 +631,21 @@ function CommandEffect ( container, from )
 	this.init ( container, 'effect', '' )
 
 	from = from && from.paramsOrdered;
-
+	
 	this.createParam ( container, 'player', 'PlayerSelector', from );
-	this.createParam ( container, 'effect', 'Potion', from );
+	//this.createParam ( container, 'effect', 'Potion', from );
+	this.createParam ( container, 'effect', 'Select', from, { items: [{id: 'Clear'}].concat ( potions ) } );
 	this.createParam ( container, 'seconds', 'Number', from, { optional: true, ignoreIfHidden: true, min:0, max:1000000, defaultValue: 30 } );
 	this.createParam ( container, 'amplifier', 'Number', from, { optional: true, ignoreIfHidden: true, min:0, max:255, defaultValue: 0 } );
 }
 
 CommandEffect.prototype = new Command ( );
-/*
+
 CommandEffect.prototype.update = function ( )
 {
 	this.updateLoop ( );
 
-	if ( this.params.effect.value.value === '0' )
+	if ( this.params.effect.value.value === 'Clear' )
 	{
 		this.params.seconds.container.style.display = 'none';
 		this.params.amplifier.container.style.display = 'none';
@@ -653,7 +656,7 @@ CommandEffect.prototype.update = function ( )
 		this.params.amplifier.container.style.display = '';
 	}
 }
-
+/*
 CommandEffect.prototype.toString = function ( )
 {
 	var output = '/' + this.name;
@@ -687,7 +690,8 @@ function CommandEnchant ( container, from )
 	from = from && from.paramsOrdered;
 
 	this.createParam ( container, 'player', 'PlayerSelector', from );
-	this.createParam ( container, 'enchantment', 'Enchantment', from );
+	//this.createParam ( container, 'enchantment', 'Enchantment', from );
+	this.createParam ( container, 'enchantment', 'Select', from, { items: enchantments } );
 	this.createParam ( container, 'level', 'Number', from, { optional: true, min:1, max:5, defaultValue: 1 } );
 }
 
@@ -757,7 +761,7 @@ function CommandGamemode ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'survival | creative | adventure', 'List', from, { items: ['survival', 'creative', 'adventure'] } );
+	this.createParam ( container, 'survival | creative | adventure', 'Select', from, { items: ['survival', 'creative', 'adventure'] } );
 	this.createParam ( container, 'player', 'PlayerSelector', from, { optional: true } );
 }
 
@@ -769,8 +773,8 @@ function CommandGameRule ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'rulename', 'List', from, { items: ['commandBlockOutput', 'doFireTick', 'doMobLoot', 'doMobSpawning', 'doTileDrops', 'keepInventory', 'mobGriefing', 'naturalRegeneration', 'doDaylightCycle'] } );
-	//this.createParam ( container, 'true | false', 'List', from, { items: ['true', 'false'] } );
+	this.createParam ( container, 'rulename', 'Select', from, { items: ['commandBlockOutput', 'doFireTick', 'doMobLoot', 'doMobSpawning', 'doTileDrops', 'keepInventory', 'mobGriefing', 'naturalRegeneration', 'doDaylightCycle'] } );
+	//this.createParam ( container, 'true | false', 'Select', from, { items: ['true', 'false'] } );
 	this.createParam ( container, 'true | false', 'Boolean', from );
 }
 
@@ -783,7 +787,8 @@ function CommandGive ( container, from )
 	from = from && from.paramsOrdered;
 
 	this.createParam ( container, 'player', 'PlayerSelector', from );
-	this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true, stringId: true } ); // New ParamItem, list of all items + custom
+	//this.createParam ( container, 'item metadata', 'Item', from, { ignoreValue: true, stringId: true } ); // New ParamItem, list of all items + custom
+	this.createParam ( container, 'item metadata', 'Select', from, { ignoreValue: true, stringId: true, items: items, value: '{id} {data}', custom: true } );
 	this.createParam ( container, 'item', 'Number', from, { ignoreIfHidden: false, min: 1 } );
 	this.createParam ( container, 'amount', 'Number', from, { optional: true, min: 0, max: 64, defaultValue: 1 } );
 	this.createParam ( container, 'metadata', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min: 0, max: 15 } );
@@ -853,7 +858,7 @@ function CommandPlaySound ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'sound id', 'List', from, { ignoreValue: true, items: sounds, custom: true } );
+	this.createParam ( container, 'sound id', 'Select', from, { ignoreValue: true, items: sounds, custom: true } );
 	this.createParam ( container, 'sound', 'Text', from, { ignoreIfHidden: false } );
 	this.createParam ( container, 'player', 'PlayerSelector', from );
 	this.createParam ( container, 'x', 'Pos', from, { optional: true } );
@@ -899,13 +904,13 @@ function CommandScoreBoard ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'objectives | players | teams', 'List', from, { items: ['objectives','players','teams'] } );
+	this.createParam ( container, 'objectives | players | teams', 'Select', from, { items: ['objectives','players','teams'] } );
 	this.createParam ( container, 'objectives', ParamScoreboardObjectives, from );
 	this.createParam ( container, 'players', ParamScoreboardPlayers, from );
 	this.createParam ( container, 'teams', ParamScoreboardTeams, from );
-	/*this.createParam ( container, 'list | add | remove | setdisplay', 'List', from, { items: ['list','add','remove','setdisplay'] } );
-	this.createParam ( container, 'set | add | remove | reset | list', 'List', from, { items: ['set','add','remove','reset','list'] } );
-	this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'List', from, { items: ['list','add','remove','empty','join','leave','option'] } );*/
+	/*this.createParam ( container, 'list | add | remove | setdisplay', 'Select', from, { items: ['list','add','remove','setdisplay'] } );
+	this.createParam ( container, 'set | add | remove | reset | list', 'Select', from, { items: ['set','add','remove','reset','list'] } );
+	this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'Select', from, { items: ['list','add','remove','empty','join','leave','option'] } );*/
 }
 
 CommandScoreBoard.prototype = new Command ( );
@@ -919,10 +924,11 @@ function CommandSetBlock ( container, from )
 	this.createParam ( container, 'x', 'Pos', from );
 	this.createParam ( container, 'y', 'Pos', from, { height: true } );
 	this.createParam ( container, 'z', 'Pos', from );
-	this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true, stringId: true } );
+	//this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true, stringId: true } );
+	this.createParam ( container, 'tilename datavalue', 'Select', from, { ignoreValue: true, stringId: true, items: blocks, value: '{id} {data}', custom: true } );
 	this.createParam ( container, 'tilename', 'Text', from, { ignoreIfHidden: false } );
 	this.createParam ( container, 'datavalue', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
-	this.createParam ( container, 'oldblockHandling', 'List', from, { optional: true, items: ['replace','keep','destory'], defaultValue: 'replace' } );
+	this.createParam ( container, 'oldblockHandling', 'Select', from, { optional: true, items: ['replace','keep','destory'], defaultValue: 'replace' } );
 	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Block' } );
 }
 
@@ -996,7 +1002,7 @@ function CommandSpreadPlayers ( container, from )
 	this.createParam ( container, 'z', 'Pos', from );
 	this.createParam ( container, 'spreadDistance', 'Number', from, {isFloat:true} );
 	this.createParam ( container, 'maxRange', 'Number', from );
-	//this.createParam ( container, 'respectTeams', 'List', from, { items: ['true','false'] } );
+	//this.createParam ( container, 'respectTeams', 'Select', from, { items: ['true','false'] } );
 	this.createParam ( container, 'respectTeams', 'Boolean', from );
 	this.createParam ( container, 'player', 'PlayerSelector', from );
 
@@ -1021,7 +1027,8 @@ function CommandSummon ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'Entity', 'Entity', from, { ignoreValue: true } );
+	this.createParam ( container, 'Entity', 'Select', from, { ignoreValue: true, stringId: true, items: entities, custom: true } );
+	//this.createParam ( container, 'Entity', 'Entity', from, { ignoreValue: true } );
 	this.createParam ( container, 'EntityName', 'Text', from, { ignoreIfHidden: false } );
 	this.createParam ( container, 'x', 'Pos', from );
 	this.createParam ( container, 'y', 'Pos', from, { height: true } );
@@ -1110,7 +1117,8 @@ function CommandTestForBlock ( container, from )
 	this.createParam ( container, 'x', 'Pos', from );
 	this.createParam ( container, 'y', 'Pos', from, { height: true } );
 	this.createParam ( container, 'z', 'Pos', from );
-	this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true } );
+	//this.createParam ( container, 'tilename datavalue', 'Block', from, { ignoreValue: true } );
+	this.createParam ( container, 'tilename datavalue', 'Select', from, { ignoreValue: true, stringId: true, items: blocks, value: '{id} {data}', custom: true } );
 	this.createParam ( container, 'tilename', 'Text', from, { ignoreIfHidden: false } );
 	this.createParam ( container, 'datavalue', 'Number', from, { optional: true, ignoreIfHidden: false, defaultValue: 0, min:0, max:15 } );
 	this.createParam ( container, 'dataTag', 'DataTag', from, { optional: true, type: 'Block' } );
@@ -1163,7 +1171,7 @@ function CommandTime ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'set | add', 'List', from, { items: ['set','add'] } );
+	this.createParam ( container, 'set | add', 'Select', from, { items: ['set','add'] } );
 	this.createParam ( container, 'number', 'Number', from ); // Add day/night
 }
 
@@ -1198,7 +1206,7 @@ function CommandWeather ( container, from )
 
 	from = from && from.paramsOrdered;
 
-	this.createParam ( container, 'clear | rain | thunder', 'List', from, { items: ['clear','rain','thunder'] } );
+	this.createParam ( container, 'clear | rain | thunder', 'Select', from, { items: ['clear','rain','thunder'] } );
 	this.createParam ( container, 'seconds', 'Number', from, { optional: true, min: 1, max: 1000000 } );
 }
 
@@ -1386,15 +1394,15 @@ function ParamAchievement ( container, from, options )
 	}
 
 	optgroup = document.createElement ( 'optgroup' )
-	optgroup.label = 'Stats';
+	optgroup.label = 'Statistics';
 	select.appendChild ( optgroup );
 
-	for ( i = 0; i < stats.length; i++  )
+	for ( i = 0; i < statistics.length; i++  )
 	{
 		option = document.createElement ( 'option' );
-		option.selected = ( stats[i].stringId == ( value || this.options.defaultValue ) )
-		option.value = stats[i].stringId;
-		option.appendChild ( document.createTextNode ( stats[i].name ) );
+		option.selected = ( statistics[i].stringId == ( value || this.options.defaultValue ) )
+		option.value = statistics[i].stringId;
+		option.appendChild ( document.createTextNode ( statistics[i].name ) );
 		optgroup.appendChild ( option );
 	}
 
@@ -1792,7 +1800,7 @@ ParamItemTag.prototype.toString = function ( )
 	return quote ( '{id:' + itemID + ( itemDamage != '' ? ',Damage:' + itemDamage : '' ) + ( tag != '' ? ',tag:' + tag : '' ) + '}' )
 }
 
-function ParamList ( container, from, options )
+function ParamSelect ( container, from, options )
 {
 	this.init ( container, '', options );
 	
@@ -1812,6 +1820,9 @@ function ParamList ( container, from, options )
 		select.appendChild ( option );
 	}
 	
+	var parent = select;
+	
+	var valueTemplate = this.options.value || '{id}';
 	var item;
 	for ( var i = 0; i < options.items.length; i++ )
 	{
@@ -1819,15 +1830,31 @@ function ParamList ( container, from, options )
 		
 		if ( typeof item == 'string' )
 			item = { name: item, stringId: item }
+			
+		if ( item.group != null )
+		{
+			parent = document.createElement ( 'optgroup' )
+			parent.label = item.group;
+			select.appendChild ( parent );
+		}
+		
+		if ( !item.stringId && !item.id )
+			continue;
+		
+		var value = valueTemplate.replace('{id}', item.stringId || item.id);
+		for ( var x in item )
+		{
+			value = value.replace ( '{' + x + '}', item[x] );
+		}
 		
 		option = document.createElement ( 'option' );
-		option.value = item.stringId || item.id;
+		option.value = value;
 		option.setAttribute('data-index', i);
-		option.selected = ( ( item.stringId || item.id ) == ( this.value || this.options.defaultValue ) )
+		option.selected = ( value == ( this.value || this.options.defaultValue ) )
 		if ( option.selected )
 			this.item = item;
 		option.appendChild ( document.createTextNode ( item.name || item.stringId || item.id ) );
-		select.appendChild ( option );
+		parent.appendChild ( option );
 	}
 	
 	if ( this.options.custom )
@@ -1844,9 +1871,9 @@ function ParamList ( container, from, options )
 	container.appendChild ( select );
 }
 
-ParamList.prototype = new Param ( );
+ParamSelect.prototype = new Param ( );
 
-ParamList.prototype.update = function ( nextHasValue )
+ParamSelect.prototype.update = function ( nextHasValue )
 {
 	this.setError ( false );
 
@@ -2139,8 +2166,8 @@ function ParamRawMessage ( container, from, options )
 	container.appendChild ( table );
 	
 	this.createParam ( table, 'text', 'Text', from, { group: 'text', groupIndex: 0, groupPrefix: this.groupPrefix, quote: true, hasSpecial: true } );
-	this.createParam ( table, 'translate', 'List', from, { group: 'text', groupIndex: 1, groupPrefix: this.groupPrefix, items: translatables, quote: true } );
-	this.createParam ( table, 'color', 'List', from, { optional: true, items: colors } );
+	this.createParam ( table, 'translate', 'Select', from, { group: 'text', groupIndex: 1, groupPrefix: this.groupPrefix, items: translatables, quote: true } );
+	this.createParam ( table, 'color', 'Select', from, { optional: true, items: colors } );
 	this.createParam ( table, 'bold', 'Boolean', from, { optional: true } );
 	this.createParam ( table, 'underlined', 'Boolean', from, { optional: true } );
 	this.createParam ( table, 'italic', 'Boolean', from, { optional: true } );
@@ -2455,7 +2482,7 @@ function ParamScoreboardObjectives ( container, from, options )
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
 
-	this.createParam ( container, 'list | add | remove | setdisplay', 'List', from, { items: ['list','add','remove','setdisplay'] } );
+	this.createParam ( container, 'list | add | remove | setdisplay', 'Select', from, { items: ['list','add','remove','setdisplay'] } );
 }
 
 ParamScoreboardObjectives.prototype = new Param ( );
@@ -2468,7 +2495,7 @@ function ParamScoreboardPlayers ( container, from, options )
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
 
-	this.createParam ( container, 'set | add | remove | reset | list', 'List', from, { items: ['set','add','remove','reset','list'] } );
+	this.createParam ( container, 'set | add | remove | reset | list', 'Select', from, { items: ['set','add','remove','reset','list'] } );
 }
 
 ParamScoreboardPlayers.prototype = new Param ( );
@@ -2481,7 +2508,7 @@ function ParamScoreboardTeams ( container, from, options )
 	options.className = 'mc-scoreboard-options';
 	container.appendChild ( options );
 
-	this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'List', from, { items: ['list','add','remove','empty','join','leave','option'] } );
+	this.createParam ( container, 'list | add | remove | empty | join | leave | option', 'Select', from, { items: ['list','add','remove','empty','join','leave','option'] } );
 }
 
 ParamScoreboardTeams.prototype = new Param ( );
@@ -3155,28 +3182,33 @@ function StructureItemPotion ( )
 	};
 }
 
-function StructureItemPlayerSkull ( )
+function StructureItemSkull ( )
 {
 	this.structure = (new structures['Item'] ( )).structure;
 
 	this.structure.SkullOwner = 'String';
 }
 
-function StructureItemFireworkStar ( )
+function StructureItemFireworkCharge ( )
 {
 	this.structure = (new structures['Item'] ( )).structure;
-
-	this.structure.Explosion = {
-		'Flicker': 'Checkbox',
-		'Trail': 'Checkbox',
-		'Type': 'Byte',
-		'Colors': {
-			type: 'List',
-			options: 'Int'
-		},
-		'FadeColors': {
-			type: 'List',
-			options: 'Int'
+	
+	this.structure['Explosion'] = {
+		type: 'Compound',
+		options: {
+			structure: {
+				'Flicker': 'Boolean',
+				'Trail': 'Boolean',
+				'Type': 'Byte',
+				'Colors': {
+					type: 'List',
+					options: 'Int'
+				},
+				'FadeColors': {
+					type: 'List',
+					options: 'Int'
+				}
+			}
 		}
 	};
 }
@@ -3185,28 +3217,14 @@ function StructureItemFirework ( )
 {
 	this.structure = (new structures['Item'] ( )).structure;
 
-	this.structure.Fireworks = {
+	this.structure['Fireworks'] = {
 		type: 'Compound',
 		options: {
 			structure: {
 				'Flight': 'Byte',
 				'Explosions': {
-					type: 'Compound',
-					options: {
-						structure: {
-							'Flicker': 'Checkbox',
-							'Trail': 'Checkbox',
-							'Type': 'Byte',
-							'Colors': {
-								type: 'List',
-								options: 'Int'
-							},
-							'FadeColors': {
-								type: 'List',
-								options: 'Int'
-							}
-						}
-					}
+					type: 'List',
+					options: (new structures['ItemFireworkCharge'] ( )).structure['Explosion']
 				}
 			}
 		}
@@ -4656,7 +4674,7 @@ params = {
 	'Enchantment': ParamEnchantment,
 	'Entity': ParamEntity,
 	'Item': ParamItem,
-	'List': ParamList,
+	'Select': ParamSelect,
 	'Number': ParamNumber,
 	'PlayerSelector': ParamPlayerSelector,
 	'Pos': ParamPos,
@@ -4675,13 +4693,13 @@ tags = {
 	'Compound': TagCompound,
 	'List': TagList,
 	
-	'Byte': TagShort,
-	'Double': TagFloat,
-	'Float': TagFloat,
-	'Int': TagShort,
-	'Long': TagShort,
-	'Short': TagShort,
 	'String': TagString,
+	'Byte': TagShort,
+	'Int': TagShort,
+	'Short': TagShort,
+	'Long': TagShort,
+	'Float': TagFloat,
+	'Double': TagFloat,
 	
 	'Boolean': TagBoolean,
 	'CommandSelector': TagCommandSelector,
@@ -4719,6 +4737,10 @@ structures = {
 	'ItemBookAndQuill': StructureItemBookAndQuill,
 	'ItemWrittenBook': StructureItemWrittenBook,
 	'ItemColourable': StructureItemColourable,
+	'ItemPotion': StructureItemPotion,
+	'ItemSkull': StructureItemSkull,
+	'ItemFirework': StructureItemFirework,
+	'ItemFireworkCharge': StructureItemFireworkCharge,
 	
 	'Entity': StructureEntity,
 	'EntityFull': StructureEntityFull,
@@ -4773,7 +4795,7 @@ structures = {
 	
 }
 
-//**BLOCKS AND ITEMS GO HERE**//
+//**INFO FROM MC STARTS HERE**//
 /**BLOCKS**/
 blocks = [
 {id:1,stringId:"minecraft:stone",data:"0",name:"Stone"},
@@ -5017,13 +5039,14 @@ blocks = [
 {id:172,stringId:"minecraft:hardened_clay",data:"0",name:"Hardened Clay"},
 {id:173,stringId:"minecraft:coal_block",data:"0",name:"Block of Coal"},
 {id:174,stringId:"minecraft:packed_ice",data:0,name:"Packed Ice"},
-{id:175,stringId:"double_plant",data:0,name:"Sunflower"},
-{id:175,stringId:"double_plant",data:1,name:"Lilac"},
-{id:175,stringId:"double_plant",data:2,name:"Double Tall Grass"},
-{id:175,stringId:"double_plant",data:3,name:"Large Fern"},
-{id:175,stringId:"double_plant",data:4,name:"RoseBush"},
-{id:175,stringId:"double_plant",data:5,name:"Peony"}
+{id:175,stringId:"minecraft:double_plant",data:0,name:"Sunflower"},
+{id:175,stringId:"minecraft:double_plant",data:1,name:"Lilac"},
+{id:175,stringId:"minecraft:double_plant",data:2,name:"Double Tall Grass"},
+{id:175,stringId:"minecraft:double_plant",data:3,name:"Large Fern"},
+{id:175,stringId:"minecraft:double_plant",data:4,name:"RoseBush"},
+{id:175,stringId:"minecraft:double_plant",data:5,name:"Peony"}
 ];
+/**ITEMS**/
 items = [
 {id:1,stringId:"minecraft:stone",data:0,name:"Stone"},
 {id:2,stringId:"minecraft:grass",data:0,name:"Grass Block"},
@@ -5308,10 +5331,10 @@ items = [
 {id:295,stringId:"minecraft:wheat_seeds",data:0,name:"Seeds"},
 {id:296,stringId:"minecraft:wheat",data:0,name:"Wheat"},
 {id:297,stringId:"minecraft:bread",data:0,name:"Bread"},
-{id:298,stringId:"minecraft:leather_helmet",data:0,name:"Leather Cap"},
-{id:299,stringId:"minecraft:leather_chestplate",data:0,name:"Leather Tunic"},
-{id:300,stringId:"minecraft:leather_leggings",data:0,name:"Leather Pants"},
-{id:301,stringId:"minecraft:leather_boots",data:0,name:"Leather Boots"},
+{id:298,stringId:"minecraft:leather_helmet",data:0,name:"Leather Cap",structure:"ItemColourable"},
+{id:299,stringId:"minecraft:leather_chestplate",data:0,name:"Leather Tunic",structure:"ItemColourable"},
+{id:300,stringId:"minecraft:leather_leggings",data:0,name:"Leather Pants",structure:"ItemColourable"},
+{id:301,stringId:"minecraft:leather_boots",data:0,name:"Leather Boots",structure:"ItemColourable"},
 {id:302,stringId:"minecraft:chainmail_helmet",data:0,name:"Chain Helmet"},
 {id:303,stringId:"minecraft:chainmail_chestplate",data:0,name:"Chain Chestplate"},
 {id:304,stringId:"minecraft:chainmail_leggings",data:0,name:"Chain Leggings"},
@@ -5399,59 +5422,59 @@ items = [
 {id:370,stringId:"minecraft:ghast_tear",data:0,name:"Ghast Tear"},
 {id:371,stringId:"minecraft:gold_nugget",data:0,name:"Gold Nugget"},
 {id:372,stringId:"minecraft:nether_wart",data:0,name:"Nether Wart"},
-{id:373,stringId:"minecraft:potion",data:0,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8193,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8225,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8257,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16385,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16417,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16449,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8194,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8226,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8258,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16386,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16418,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16450,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8227,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8259,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16419,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16451,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8196,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8228,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8260,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16388,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16420,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16452,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8261,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8229,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16453,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16421,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8230,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8262,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16422,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16454,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8232,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8264,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16424,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16456,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8201,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8233,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8265,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16393,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16425,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16457,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8234,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8266,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16426,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16458,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8268,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8236,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16460,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16428,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8238,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:8270,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16430,name:"Potion"},
-{id:373,stringId:"minecraft:potion",data:16462,name:"Potion"},
+{id:373,stringId:"minecraft:potion",data:0,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8193,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8225,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8257,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16385,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16417,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16449,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8194,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8226,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8258,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16386,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16418,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16450,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8227,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8259,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16419,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16451,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8196,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8228,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8260,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16388,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16420,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16452,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8261,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8229,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16453,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16421,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8230,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8262,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16422,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16454,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8232,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8264,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16424,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16456,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8201,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8233,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8265,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16393,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16425,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16457,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8234,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8266,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16426,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16458,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8268,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8236,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16460,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16428,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8238,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:8270,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16430,name:"Potion",structure:"ItemPotion"},
+{id:373,stringId:"minecraft:potion",data:16462,name:"Potion",structure:"ItemPotion"},
 {id:374,stringId:"minecraft:glass_bottle",data:0,name:"Glass Bottle"},
 {id:375,stringId:"minecraft:spider_eye",data:0,name:"Spider Eye"},
 {id:376,stringId:"minecraft:fermented_spider_eye",data:0,name:"Fermented Spider Eye"},
@@ -5487,8 +5510,8 @@ items = [
 {id:383,stringId:"minecraft:spawn_egg",data:120,name:"Spawn"},
 {id:384,stringId:"minecraft:experience_bottle",data:0,name:"Bottle o' Enchanting"},
 {id:385,stringId:"minecraft:fire_charge",data:0,name:"Fire Charge"},
-{id:386,stringId:"minecraft:writable_book",data:0,name:"Book and Quill"},
-{id:387,stringId:"minecraft:written_book",data:0,name:"Written Book"},
+{id:386,stringId:"minecraft:writable_book",data:0,name:"Book and Quill",structure:"ItemBookAndQuill"},
+{id:387,stringId:"minecraft:written_book",data:0,name:"Written Book",structure:"ItemWrittenBook"},
 {id:388,stringId:"minecraft:emerald",data:0,name:"Emerald"},
 {id:389,stringId:"minecraft:item_frame",data:0,name:"Item Frame"},
 {id:390,stringId:"minecraft:flower_pot",data:0,name:"Flower Pot"},
@@ -5498,16 +5521,16 @@ items = [
 {id:394,stringId:"minecraft:poisonous_potato",data:0,name:"Poisonous Potato"},
 {id:395,stringId:"minecraft:map",data:0,name:"Empty Map"},
 {id:396,stringId:"minecraft:golden_carrot",data:0,name:"Golden Carrot"},
-{id:397,stringId:"minecraft:skull",data:0,name:"Skeleton Skull"},
-{id:397,stringId:"minecraft:skull",data:1,name:"Wither Skeleton Skull"},
-{id:397,stringId:"minecraft:skull",data:2,name:"Zombie Head"},
-{id:397,stringId:"minecraft:skull",data:3,name:"Head"},
-{id:397,stringId:"minecraft:skull",data:4,name:"Creeper Head"},
+{id:397,stringId:"minecraft:skull",data:0,name:"Skeleton Skull",structure:"ItemSkull"},
+{id:397,stringId:"minecraft:skull",data:1,name:"Wither Skeleton Skull",structure:"ItemSkull"},
+{id:397,stringId:"minecraft:skull",data:2,name:"Zombie Head",structure:"ItemSkull"},
+{id:397,stringId:"minecraft:skull",data:3,name:"Head",structure:"ItemSkull"},
+{id:397,stringId:"minecraft:skull",data:4,name:"Creeper Head",structure:"ItemSkull"},
 {id:398,stringId:"minecraft:carrot_on_a_stick",data:0,name:"Carrot on a Stick"},
 {id:399,stringId:"minecraft:nether_star",data:0,name:"Nether Star"},
 {id:400,stringId:"minecraft:pumpkin_pie",data:0,name:"Pumpkin Pie"},
-{id:401,stringId:"minecraft:fireworks",data:0,name:"Firework Rocket"},
-{id:402,stringId:"minecraft:firework_charge",data:0,name:"Firework Star"},
+{id:401,stringId:"minecraft:fireworks",data:0,name:"Firework Rocket",structure:"ItemFirework"},
+{id:402,stringId:"minecraft:firework_charge",data:0,name:"Firework Star",structure:"ItemFireworkCharge"},
 {id:403,stringId:"minecraft:enchanted_book",data:0,name:"Enchanted Book"},
 {id:404,stringId:"minecraft:comparator",data:0,name:"Redstone Comparator"},
 {id:405,stringId:"minecraft:netherbrick",data:0,name:"Nether Brick"},
@@ -5532,13 +5555,15 @@ items = [
 {id:2266,stringId:"minecraft:record_11",data:0,name:"Music Disc"},
 {id:2267,stringId:"minecraft:record_wait",data:0,name:"Music Disc"},
 {id:174,stringId:"minecraft:packed_ice",data:0,name:"Packed Ice"},
-{id:175,stringId:"double_plant",data:0,name:"Sunflower"},
-{id:175,stringId:"double_plant",data:1,name:"Lilac"},
-{id:175,stringId:"double_plant",data:2,name:"Double Tall Grass"},
-{id:175,stringId:"double_plant",data:3,name:"Large Fern"},
-{id:175,stringId:"double_plant",data:4,name:"RoseBush"},
-{id:175,stringId:"double_plant",data:5,name:"Peony"}
+{id:175,stringId:"minecraft:double_plant",data:0,name:"Sunflower"},
+{id:175,stringId:"minecraft:double_plant",data:1,name:"Lilac"},
+{id:175,stringId:"minecraft:double_plant",data:2,name:"Double Tall Grass"},
+{id:175,stringId:"minecraft:double_plant",data:3,name:"Large Fern"},
+{id:175,stringId:"minecraft:double_plant",data:4,name:"RoseBush"},
+{id:175,stringId:"minecraft:double_plant",data:5,name:"Peony"},
+{id:422,stringId:"minecraft:command_block_minecart",data:0,name:"Minecart with Command Block"}
 ];
+/**ACHIEVEMENTS**/
 achievements = [
 {stringId:"achievement.openInventory",name:"Taking Inventory"},
 {stringId:"achievement.mineWood",name:"Getting Wood"},
@@ -5568,7 +5593,8 @@ achievements = [
 {stringId:"achievement.overkill",name:"Overkill"},
 {stringId:"achievement.bookcase",name:"Librarian"}
 ];
-stats = [
+/**STATISTICS**/
+statistics = [
 {stringId:"stat.startGame",name:"Times played"},
 {stringId:"stat.createWorld",name:"Worlds created"},
 {stringId:"stat.loadWorld",name:"Saves loaded"},
@@ -6450,6 +6476,7 @@ stats = [
 {stringId:"stat.craftItem.172",name:"Hardened Clay Crafted"},
 {stringId:"stat.craftItem.420",name:"Lead Crafted"}
 ];
+/**ENCHANTMENTS**/
 enchantments = [
 {id:0,name:"Protection",minLevel:1,maxLevel:4},
 {id:1,name:"Fire Protection",minLevel:1,maxLevel:4},
@@ -6474,6 +6501,7 @@ enchantments = [
 {id:50,name:"Flame",minLevel:1,maxLevel:1},
 {id:51,name:"Infinity",minLevel:1,maxLevel:1}
 ];
+/**POTIONS**/
 potions = [
 {id:1,name:"Speed"},
 {id:2,name:"Slowness"},
@@ -6499,6 +6527,7 @@ potions = [
 {id:22,name:"Absorption"},
 {id:23,name:"Saturation"}
 ];
+/**COLORS**/
 colors = [
 {stringId:"black",name:"Black"},
 {stringId:"dark_blue",name:"Dark blue"},
@@ -6519,9 +6548,11 @@ colors = [
 {stringId:"reset",name:"Reset"}
 ];
 
+//**INFO FROM MC ENDS HERE**//
+
 /**ENTITIES**/
 entities = [
-	'Passive Mobs',
+	{ group: 'Passive Mobs' },
 	{
 		id: 'Bat',
 		name: 'Bat',
@@ -6572,7 +6603,7 @@ entities = [
 		name: 'Villager',
 		structure: 'EntityMobVillager'
 	},
-	'Neutral Mobs',
+	{ group: 'Neutral Mobs' },
 	{
 		id: 'Enderman',
 		name: 'Enderman',
@@ -6583,7 +6614,7 @@ entities = [
 		name: 'Wolf',
 		structure: 'EntityMobWolf'
 	},
-	'Aggressive Mobs',
+	{ group: 'Aggressive Mobs' },
 	{
 		id: 'Blaze',
 		name: 'Blaze',
@@ -6649,7 +6680,7 @@ entities = [
 		name: 'Zombie Pigman',
 		structure: 'EntityMobPigZombie'
 	},
-	'Utility Mobs',
+	{ group: 'Utility Mobs' },
 	{
 		id: 'VillagerGolem',
 		name: 'Iron Golem',
@@ -6660,7 +6691,7 @@ entities = [
 		name: 'Snow Golem',
 		structure: 'EntityMob'
 	},
-	'Boss Mobs',
+	{ group: 'Boss Mobs' },
 	{
 		id: 'EnderDragon',
 		name: 'Ender Dragon',
@@ -6671,7 +6702,7 @@ entities = [
 		name: 'Wither',
 		structure: 'EntityMobWitherBoss'
 	},
-	'Projectiles',
+	{ group: 'Projectiles' },
 	{
 		id: 'Arrow',
 		name: 'Arrow',
@@ -6712,7 +6743,7 @@ entities = [
 		name: 'XP Bottle',
 		structure: 'EntityProjectileOwned'
 	},
-	'Minecarts',
+	{ group: 'Minecarts' },
 	{
 		id: 'MinecartRideable',
 		name: 'Minecart',
@@ -6748,7 +6779,7 @@ entities = [
 		name: 'TNT Minecart',
 		structure: 'EntityMinecartTNT'
 	},
-	'Other',
+	{ group: 'Other' },
 	{
 		id: 'Boat',
 		name: 'Boat',
@@ -8369,7 +8400,7 @@ var mcCommands = {
 	'blocks': blocks,
 	'entities': entities,
 	'achievements': achievements,
-	'stats': stats,
+	'statistics': statistics,
 	'enchantments': enchantments,
 	'potions': potions,
 	'sounds': sounds,

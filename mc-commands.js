@@ -7505,9 +7505,9 @@ entities = [
 		structure: 'EntityMinecartSpawner'
 	},
 	{
-		id: 'MinecraftChest',
+		id: 'MinecartChest',
 		name: 'Storage Minecart',
-		structure: 'EntityMinecraftInventory'
+		structure: 'EntityMinecartInventory'
 	},
 	{
 		id: 'MinecartTNT',

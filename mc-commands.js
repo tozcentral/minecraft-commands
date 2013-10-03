@@ -839,7 +839,7 @@ CommandGive.prototype.update = function ( )
 {
 	var selectValue = this.params['item metadata'].value.value.toString ( );
 	
-	if ( selectValue === '0' )
+	if ( selectValue === 'custom' )
 	{
 		this.params.item.container.style.display = '';
 		this.params.metadata.container.style.display = '';

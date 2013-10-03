@@ -1,3 +1,13 @@
+body,
+select,
+button,
+input,
+textarea,
+table {
+	font-family: arial, sans-serif;
+	font-size: 10pt;
+}
+
 table {
 	width: auto;
 }
@@ -6,6 +16,7 @@ th, td {
 	vertical-align: top;
 	line-height: 20px;
 	white-space: pre;
+	position: relative;
 }
 
 th {
@@ -24,6 +35,18 @@ body,
 	margin: 0;
 	width: 100%;
 	height: 100%;
+}
+
+.remove {
+	position:absolute;
+	left: -50px;
+	top: 0;
+	width: 50px;
+	text-align: right;
+}
+
+.description {
+	color: #666;
 }
 
 .mc-command-text {
@@ -55,6 +78,10 @@ body,
 	bottom: 150px;
 	overflow: auto;
 	padding: 20px;
+}
+
+.mc-tag-list-item {
+	border-bottom: 1px solid #ddd;
 }
 
 .error {

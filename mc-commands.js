@@ -5,6 +5,13 @@
 		Move items in TagList up and down.
 		ParamSelect option for custom editing where it searches from list with drop down.
 		Make it work in all browsers
+		
+		Redesign:
+			better separate each item:
+				[Name       ]
+				|value      |
+				|description|
+			For nested items have a breadcrumb bar at the top, when editing an item add a button to the breadcrumbs at the top
 **/
 
 (function ( document, window, undefined ) {
@@ -3082,7 +3089,8 @@ ParamRawMessageEvent.prototype.updateParam = function ( param )
 			this.param = new params['ItemTag'] ( optionsContainer, this.param );
 		break
 		case 'show_achievement':
-			this.param = new params['Achievement'] ( optionsContainer, this.param );
+			this.param = new params['Select'] ( optionsContainer, this.param, { items: [{group:'Achievements'}].concat ( achievements, {group:'Statistics'}, statistics ) } );
+			//this.param = new params['Achievement'] ( optionsContainer, this.param );
 		break
 	}
 }
@@ -5411,6 +5419,7 @@ params = {
 	//'Enchantment': ParamEnchantment,
 	//'Entity': ParamEntity,
 	//'Item': ParamItem,
+	'ItemTag': ParamItemTag,
 	'Select': ParamSelect,
 	'Number': ParamNumber,
 	'PlayerSelector': ParamPlayerSelector,
